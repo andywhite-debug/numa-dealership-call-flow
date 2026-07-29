@@ -219,15 +219,15 @@
 <div class="card">
   <h2>Call Flow Diagram</h2>
   <div class="legend">
-    <span><span class="dot" style="background:var(--blue)"></span>DID / External #</span>
-    <span><span class="dot" style="background:var(--purple)"></span>Auto Attendant</span>
-    <span><span class="dot" style="background:var(--indigo)"></span>IVR</span>
-    <span><span class="dot" style="background:var(--amber)"></span>Ring Group</span>
-    <span><span class="dot" style="background:var(--teal)"></span>Hunt Group</span>
-    <span><span class="dot" style="background:var(--green)"></span>Call Queue</span>
-    <span><span class="dot" style="background:var(--slate)"></span>Extension</span>
-    <span><span class="dot" style="background:var(--red)"></span>Voicemail</span>
-    <span><span class="dot" style="background:var(--pink)"></span>External Forward</span>
+    <span><span class="dot" style="background:var(--blue)"></span>DID / External # — stadium</span>
+    <span><span class="dot" style="background:var(--purple)"></span>Auto Attendant — diamond</span>
+    <span><span class="dot" style="background:var(--indigo)"></span>IVR — diamond</span>
+    <span><span class="dot" style="background:var(--amber)"></span>Ring Group — subroutine</span>
+    <span><span class="dot" style="background:var(--teal)"></span>Hunt Group — subroutine</span>
+    <span><span class="dot" style="background:var(--green)"></span>Call Queue — subroutine</span>
+    <span><span class="dot" style="background:var(--slate)"></span>Extension — rectangle</span>
+    <span><span class="dot" style="background:var(--red)"></span>Voicemail — stadium</span>
+    <span><span class="dot" style="background:var(--pink)"></span>External Forward — stadium</span>
   </div>
   <div class="row-actions" style="align-items:center;">
     <button class="primary" onclick="generateFlowchart()">Generate Flow Chart</button>
@@ -534,6 +534,20 @@ function addFooterToSvg(svgEl){
   text.textContent=footerLine;
   svgEl.appendChild(text);
 }
+/* node shape per type, echoing common call-flow/telephony diagram conventions:
+   stadium = entry/exit terminator (DID in, Voicemail/External out),
+   diamond = decision point (caller picks a menu option),
+   subroutine (double-bordered rect) = a sub-flow that rings multiple destinations,
+   plain rectangle = an ordinary process step/endpoint (a person's extension). */
+const TYPE_SHAPE={did:'stadium', vm:'stadium', extn:'stadium', aa:'diamond', ivr:'diamond', rg:'subroutine', hg:'subroutine', q:'subroutine', ext:'rect'};
+function shapeWrap(cls,label){
+  switch(TYPE_SHAPE[cls]){
+    case 'stadium': return '(["'+label+'"])';
+    case 'diamond': return '{"'+label+'"}';
+    case 'subroutine': return '[["'+label+'"]]';
+    default: return '["'+label+'"]';
+  }
+}
 function idFor(type,name){ return (TYPE_PREFIX[type]||'X')+'_'+sanitize(name); }
 function parseTypeName(str){
   if(!str) return null;
@@ -642,7 +656,7 @@ function generateFlowchart(){
   }
 
   let lines=['flowchart '+chartDirection];
-  nodeIds.forEach(id=>{ lines.push(id+'["'+nodeDefs[id]+'"]'); });
+  nodeIds.forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
   edges.forEach(e=>{ lines.push(e.from+' -->'+(e.label?'|'+e.label+'|':'')+' '+e.to); });
   lines.push('classDef did fill:#dbeafe,stroke:#2563eb,color:#1e3a8a');
   lines.push('classDef aa fill:#ede9fe,stroke:#7c3aed,color:#4c1d95');
