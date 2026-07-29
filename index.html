@@ -97,9 +97,9 @@
     <div class="field"><label>Phone System / PBX</label><input id="pbxSystem" placeholder="e.g. Avaya IP Office, FreePBX, CDK Voice Connect"></div>
     <div class="field"><label>Documented By / Date</label><input id="preparedBy" placeholder="e.g. Andy White — 2026-07-28"></div>
     <div class="field"><label>DID Range</label><input id="directDidRange" placeholder="e.g. (555) 100-3000 – 3099"></div>
-    <div class="field"><label>Main Contact Name</label><input id="contactName" placeholder="e.g. Jamie Rivera"></div>
-    <div class="field"><label>Main Contact Email</label><input id="contactEmail" placeholder="e.g. jamie@example-motors.com"></div>
-    <div class="field"><label>Main Contact Phone</label><input id="contactPhone" placeholder="e.g. (555) 100-2010"></div>
+    <div class="field"><label>Phone Contact Name</label><input id="contactName" placeholder="e.g. Jamie Rivera"></div>
+    <div class="field"><label>Phone Contact Email</label><input id="contactEmail" placeholder="e.g. jamie@example-motors.com"></div>
+    <div class="field"><label>Contact Phone</label><input id="contactPhone" placeholder="e.g. (555) 100-2010"></div>
   </div>
 </div>
 
@@ -262,8 +262,8 @@ function selectCell(cls, options){ const td=document.createElement('td');
   options.forEach(o=>{ const opt=document.createElement('option'); opt.value=o; opt.textContent=o; s.appendChild(opt); });
   td.appendChild(s); return td; }
 
-function textareaCell(cls, placeholder, rows){ const td=document.createElement('td');
-  const t=document.createElement('textarea'); t.className=cls+' menu-box'; t.placeholder=placeholder||''; t.rows=rows||2;
+function textareaCell(cls, placeholder, rows, monospace){ const td=document.createElement('td');
+  const t=document.createElement('textarea'); t.className=cls+(monospace===false?'':' menu-box'); t.placeholder=placeholder||''; t.rows=rows||2;
   td.appendChild(t); return td; }
 
 const ROUTE_TYPES=['AutoAttendant','IVR','RingGroup','HuntGroup','Queue','Extension','Voicemail','External'];
@@ -283,8 +283,8 @@ function addDidRow(vals){
 function addAaRow(vals){
   const tr=document.createElement('tr');
   tr.appendChild(textCell('aa-name','Main AA'));
-  tr.appendChild(textCell('aa-bh','"Thank you for calling..."'));
-  tr.appendChild(textCell('aa-ah','"We are currently closed..."'));
+  tr.appendChild(textareaCell('aa-bh','"Thank you for calling..."',2,false));
+  tr.appendChild(textareaCell('aa-ah','"We are currently closed..."',2,false));
   tr.appendChild(textareaCell('aa-menu','1=RingGroup:Sales\n2=Queue:Service\n0=Extension:100',3));
   tr.appendChild(textCell('aa-timeout','Voicemail:General'));
   tr.appendChild(textCell('aa-extension',''));
@@ -295,7 +295,7 @@ function addAaRow(vals){
 function addIvrRow(vals){
   const tr=document.createElement('tr');
   tr.appendChild(textCell('ivr-name','Service Status IVR'));
-  tr.appendChild(textCell('ivr-desc','Looks up RO status by phone number via DMS'));
+  tr.appendChild(textareaCell('ivr-desc','Looks up RO status by phone number via DMS',2,false));
   tr.appendChild(textareaCell('ivr-menu','1=Extension:301\n2=Voicemail:Service',3));
   tr.appendChild(textCell('ivr-fallback','Queue:Service'));
   tr.appendChild(textCell('ivr-extension',''));
