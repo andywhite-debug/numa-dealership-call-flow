@@ -97,12 +97,15 @@
     <div class="field"><label>Phone System / PBX</label><input id="pbxSystem" placeholder="e.g. Avaya IP Office, FreePBX, CDK Voice Connect"></div>
     <div class="field"><label>Documented By / Date</label><input id="preparedBy" placeholder="e.g. Andy White — 2026-07-28"></div>
     <div class="field"><label>Direct DID Range</label><input id="directDidRange" placeholder="e.g. (555) 100-3000 – 3099"></div>
+    <div class="field"><label>Main Contact Name</label><input id="contactName" placeholder="e.g. Jamie Rivera"></div>
+    <div class="field"><label>Main Contact Email</label><input id="contactEmail" placeholder="e.g. jamie@example-motors.com"></div>
+    <div class="field"><label>Main Contact Phone</label><input id="contactPhone" placeholder="e.g. (555) 100-2010"></div>
   </div>
 </div>
 
 <div class="card">
   <h2><span class="dot" style="background:var(--blue)"></span>DIDs / External Numbers</h2>
-  <p class="desc">Every phone number that comes into the dealership from the carrier, and what it routes to first.</p>
+  <p class="desc">Every (pertinent to Numa) phone number that comes into the dealership from the carrier, and what it routes to first.</p>
   <div class="tablewrap">
   <table id="didsTable">
     <thead><tr>
@@ -393,6 +396,9 @@ function collectData(){
     pbxSystem: document.getElementById('pbxSystem').value,
     preparedBy: document.getElementById('preparedBy').value,
     directDidRange: document.getElementById('directDidRange').value,
+    contactName: document.getElementById('contactName').value,
+    contactEmail: document.getElementById('contactEmail').value,
+    contactPhone: document.getElementById('contactPhone').value,
     specialRouting: document.getElementById('specialRouting').value,
     dids: rowsOf('didsTable',['did-num','did-desc','did-carrier','did-type','did-destname','did-notes']),
     aas: rowsOf('aaTable',['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension']),
@@ -410,6 +416,9 @@ function loadData(d){
   document.getElementById('pbxSystem').value=d.pbxSystem||'';
   document.getElementById('preparedBy').value=d.preparedBy||'';
   document.getElementById('directDidRange').value=d.directDidRange||'';
+  document.getElementById('contactName').value=d.contactName||'';
+  document.getElementById('contactEmail').value=d.contactEmail||'';
+  document.getElementById('contactPhone').value=d.contactPhone||'';
   document.getElementById('specialRouting').value=d.specialRouting||'';
   clearTable('didsTable'); (d.dids||[]).forEach(r=>addDidRow(['did-num','did-desc','did-carrier','did-type','did-destname','did-notes'].map(k=>r[k])));
   clearTable('aaTable'); (d.aas||[]).forEach(r=>addAaRow(['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension'].map(k=>r[k])));
@@ -446,6 +455,7 @@ document.getElementById('loadExampleBtn').onclick=function(){
   loadData({
     dealershipName:'Example Motors', mainNumber:'(555) 100-2000', pbxSystem:'Avaya IP Office',
     preparedBy:'Andy White — 2026-07-28', directDidRange:'(555) 100-3000 – 3099',
+    contactName:'Jamie Rivera', contactEmail:'jamie@example-motors.com', contactPhone:'(555) 100-2010',
     specialRouting:'Sundays & holidays: Main AA plays after-hours greeting and routes straight to Voicemail:General. Snow/closure days: GM can force all DIDs to Voicemail via feature code *71.',
     dids:[
       {'did-num':'(555) 100-2000','did-desc':'Main Line','did-carrier':'AT&T','did-type':'AutoAttendant','did-destname':'Main AA','did-notes':'Published number'},
