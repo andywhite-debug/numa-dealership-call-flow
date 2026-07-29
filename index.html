@@ -125,7 +125,7 @@
   <table id="aaTable">
     <thead><tr>
       <th style="width:10%">Name</th><th style="width:11%">Business-Hours Greeting</th><th style="width:11%">After-Hours Greeting</th>
-      <th style="width:24%">Menu Options</th><th style="width:10%">No-Input Timeout →</th><th style="width:12%">DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:24%">Menu Options</th><th style="width:10%">No-Input Timeout →</th><th style="width:16%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -140,7 +140,7 @@
   <table id="ivrTable">
     <thead><tr>
       <th style="width:10%">Name</th><th style="width:15%">Purpose / Description</th>
-      <th style="width:27%">Menu Options</th><th style="width:13%">Fallback → (Type:Name)</th><th style="width:12%">DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:27%">Menu Options</th><th style="width:13%">Fallback → (Type:Name)</th><th style="width:16%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -155,7 +155,7 @@
   <table id="rgTable">
     <thead><tr>
       <th style="width:12%">Name</th><th style="width:16%">Members (extensions)</th><th style="width:12%">Ring Strategy</th>
-      <th style="width:9%">Timeout (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:9%">Timeout (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:16%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -170,7 +170,7 @@
   <table id="hgTable">
     <thead><tr>
       <th style="width:12%">Name</th><th style="width:16%">Members (ordered)</th><th style="width:12%">Hunt Strategy</th>
-      <th style="width:9%">Timeout/step (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:9%">Timeout/step (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:16%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -185,7 +185,7 @@
   <table id="qTable">
     <thead><tr>
       <th style="width:12%">Name</th><th style="width:16%">Agents (extensions)</th><th style="width:12%">Strategy</th>
-      <th style="width:9%">Max Wait (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:9%">Max Wait (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:16%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -287,11 +287,10 @@ function addAaRow(vals){
   tr.appendChild(textCell('aa-ah','"We are currently closed..."'));
   tr.appendChild(textareaCell('aa-menu','1=RingGroup:Sales\n2=Queue:Service\n0=Extension:100',3));
   tr.appendChild(textCell('aa-timeout','Voicemail:General'));
-  tr.appendChild(textCell('aa-directdid',''));
   tr.appendChild(textCell('aa-extension',''));
   tr.appendChild(delCell());
   document.querySelector('#aaTable tbody').appendChild(tr);
-  if(vals) fillRow(tr,['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension'],vals);
+  if(vals) fillRow(tr,['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-extension'],vals);
 }
 function addIvrRow(vals){
   const tr=document.createElement('tr');
@@ -299,11 +298,10 @@ function addIvrRow(vals){
   tr.appendChild(textCell('ivr-desc','Looks up RO status by phone number via DMS'));
   tr.appendChild(textareaCell('ivr-menu','1=Extension:301\n2=Voicemail:Service',3));
   tr.appendChild(textCell('ivr-fallback','Queue:Service'));
-  tr.appendChild(textCell('ivr-directdid',''));
   tr.appendChild(textCell('ivr-extension',''));
   tr.appendChild(delCell());
   document.querySelector('#ivrTable tbody').appendChild(tr);
-  if(vals) fillRow(tr,['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-directdid','ivr-extension'],vals);
+  if(vals) fillRow(tr,['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-extension'],vals);
 }
 function addRgRow(vals){
   const tr=document.createElement('tr');
@@ -312,11 +310,10 @@ function addRgRow(vals){
   tr.appendChild(selectCell('rg-strategy',['Simultaneous','Sequential','Ring All']));
   tr.appendChild(textCell('rg-timeout','20'));
   tr.appendChild(textCell('rg-overflow','Voicemail:Sales'));
-  tr.appendChild(textCell('rg-directdid',''));
   tr.appendChild(textCell('rg-extension',''));
   tr.appendChild(delCell());
   document.querySelector('#rgTable tbody').appendChild(tr);
-  if(vals) fillRow(tr,['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-directdid','rg-extension'],vals);
+  if(vals) fillRow(tr,['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-extension'],vals);
 }
 function addHgRow(vals){
   const tr=document.createElement('tr');
@@ -325,11 +322,10 @@ function addHgRow(vals){
   tr.appendChild(selectCell('hg-strategy',['Linear','Circular','Longest Idle']));
   tr.appendChild(textCell('hg-timeout','15'));
   tr.appendChild(textCell('hg-overflow','Voicemail:Parts'));
-  tr.appendChild(textCell('hg-directdid',''));
   tr.appendChild(textCell('hg-extension',''));
   tr.appendChild(delCell());
   document.querySelector('#hgTable tbody').appendChild(tr);
-  if(vals) fillRow(tr,['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-directdid','hg-extension'],vals);
+  if(vals) fillRow(tr,['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-extension'],vals);
 }
 function addQRow(vals){
   const tr=document.createElement('tr');
@@ -338,11 +334,10 @@ function addQRow(vals){
   tr.appendChild(selectCell('q-strategy',['Ring All','Round Robin','Longest Idle','Fewest Calls']));
   tr.appendChild(textCell('q-maxwait','180'));
   tr.appendChild(textCell('q-overflow','Voicemail:Service'));
-  tr.appendChild(textCell('q-directdid',''));
   tr.appendChild(textCell('q-extension',''));
   tr.appendChild(delCell());
   document.querySelector('#qTable tbody').appendChild(tr);
-  if(vals) fillRow(tr,['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-directdid','q-extension'],vals);
+  if(vals) fillRow(tr,['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-extension'],vals);
 }
 function addExtRow(vals){
   const tr=document.createElement('tr');
@@ -401,11 +396,11 @@ function collectData(){
     contactPhone: document.getElementById('contactPhone').value,
     specialRouting: document.getElementById('specialRouting').value,
     dids: rowsOf('didsTable',['did-num','did-desc','did-carrier','did-type','did-destname','did-notes']),
-    aas: rowsOf('aaTable',['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension']),
-    ivrs: rowsOf('ivrTable',['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-directdid','ivr-extension']),
-    rgs: rowsOf('rgTable',['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-directdid','rg-extension']),
-    hgs: rowsOf('hgTable',['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-directdid','hg-extension']),
-    qs: rowsOf('qTable',['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-directdid','q-extension']),
+    aas: rowsOf('aaTable',['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-extension']),
+    ivrs: rowsOf('ivrTable',['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-extension']),
+    rgs: rowsOf('rgTable',['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-extension']),
+    hgs: rowsOf('hgTable',['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-extension']),
+    qs: rowsOf('qTable',['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-extension']),
     exts: rowsOf('extTable',['ext-num','ext-user','ext-dept','ext-directdid','ext-vm'])
   };
 }
@@ -421,11 +416,11 @@ function loadData(d){
   document.getElementById('contactPhone').value=d.contactPhone||'';
   document.getElementById('specialRouting').value=d.specialRouting||'';
   clearTable('didsTable'); (d.dids||[]).forEach(r=>addDidRow(['did-num','did-desc','did-carrier','did-type','did-destname','did-notes'].map(k=>r[k])));
-  clearTable('aaTable'); (d.aas||[]).forEach(r=>addAaRow(['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension'].map(k=>r[k])));
-  clearTable('ivrTable'); (d.ivrs||[]).forEach(r=>addIvrRow(['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-directdid','ivr-extension'].map(k=>r[k])));
-  clearTable('rgTable'); (d.rgs||[]).forEach(r=>addRgRow(['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-directdid','rg-extension'].map(k=>r[k])));
-  clearTable('hgTable'); (d.hgs||[]).forEach(r=>addHgRow(['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-directdid','hg-extension'].map(k=>r[k])));
-  clearTable('qTable'); (d.qs||[]).forEach(r=>addQRow(['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-directdid','q-extension'].map(k=>r[k])));
+  clearTable('aaTable'); (d.aas||[]).forEach(r=>addAaRow(['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-extension'].map(k=>r[k])));
+  clearTable('ivrTable'); (d.ivrs||[]).forEach(r=>addIvrRow(['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-extension'].map(k=>r[k])));
+  clearTable('rgTable'); (d.rgs||[]).forEach(r=>addRgRow(['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-extension'].map(k=>r[k])));
+  clearTable('hgTable'); (d.hgs||[]).forEach(r=>addHgRow(['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-extension'].map(k=>r[k])));
+  clearTable('qTable'); (d.qs||[]).forEach(r=>addQRow(['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-extension'].map(k=>r[k])));
   clearTable('extTable'); (d.exts||[]).forEach(r=>addExtRow(['ext-num','ext-user','ext-dept','ext-directdid','ext-vm'].map(k=>r[k])));
 }
 
@@ -464,19 +459,19 @@ document.getElementById('loadExampleBtn').onclick=function(){
     ],
     aas:[
       {'aa-name':'Main AA','aa-bh':'"Thank you for calling Example Motors..."','aa-ah':'"We are currently closed..."',
-       'aa-menu':'1=RingGroup:Sales\n2=Queue:Service\n3=HuntGroup:Parts\n4=IVR:Service Status IVR\n0=Extension:100','aa-timeout':'Voicemail:General','aa-directdid':'','aa-extension':'700'}
+       'aa-menu':'1=RingGroup:Sales\n2=Queue:Service\n3=HuntGroup:Parts\n4=IVR:Service Status IVR\n0=Extension:100','aa-timeout':'Voicemail:General','aa-extension':'700'}
     ],
     ivrs:[
-      {'ivr-name':'Service Status IVR','ivr-desc':'Looks up RO status by phone number via DMS','ivr-menu':'1=Extension:301\n2=Voicemail:Service','ivr-fallback':'Queue:Service','ivr-directdid':'','ivr-extension':'710'}
+      {'ivr-name':'Service Status IVR','ivr-desc':'Looks up RO status by phone number via DMS','ivr-menu':'1=Extension:301\n2=Voicemail:Service','ivr-fallback':'Queue:Service','ivr-extension':'710'}
     ],
     rgs:[
-      {'rg-name':'Sales','rg-members':'101,102,103','rg-strategy':'Simultaneous','rg-timeout':'20','rg-overflow':'Voicemail:Sales','rg-directdid':'(555) 100-2001','rg-extension':'750'}
+      {'rg-name':'Sales','rg-members':'101,102,103','rg-strategy':'Simultaneous','rg-timeout':'20','rg-overflow':'Voicemail:Sales','rg-extension':'750'}
     ],
     hgs:[
-      {'hg-name':'Parts','hg-members':'201>202','hg-strategy':'Linear','hg-timeout':'15','hg-overflow':'Voicemail:Parts','hg-directdid':'','hg-extension':'760'}
+      {'hg-name':'Parts','hg-members':'201>202','hg-strategy':'Linear','hg-timeout':'15','hg-overflow':'Voicemail:Parts','hg-extension':'760'}
     ],
     qs:[
-      {'q-name':'Service','q-agents':'301,302,303','q-strategy':'Round Robin','q-maxwait':'180','q-overflow':'Voicemail:Service','q-directdid':'(555) 100-2002','q-extension':'770'}
+      {'q-name':'Service','q-agents':'301,302,303','q-strategy':'Round Robin','q-maxwait':'180','q-overflow':'Voicemail:Service','q-extension':'770'}
     ],
     exts:[
       {'ext-num':'100','ext-user':'Front Desk','ext-dept':'Reception','ext-directdid':'','ext-vm':'Y'},
@@ -561,19 +556,19 @@ function generateFlowchart(){
     setNode(id, 'DID: '+esc(r['did-num'])+(r['did-desc']?'\\n'+esc(r['did-desc']):''), 'did');
   });
   data.aas.forEach(r=>{ if(!r['aa-name']) return;
-    setNode(idFor('AutoAttendant',r['aa-name']), withExt(withDid('Auto Attendant: '+esc(r['aa-name']), r['aa-directdid']), r['aa-extension']), 'aa');
+    setNode(idFor('AutoAttendant',r['aa-name']), withExt('Auto Attendant: '+esc(r['aa-name']), r['aa-extension']), 'aa');
   });
   data.ivrs.forEach(r=>{ if(!r['ivr-name']) return;
-    setNode(idFor('IVR',r['ivr-name']), withExt(withDid('IVR: '+esc(r['ivr-name'])+(r['ivr-desc']?'\\n'+esc(r['ivr-desc']):''), r['ivr-directdid']), r['ivr-extension']), 'ivr');
+    setNode(idFor('IVR',r['ivr-name']), withExt('IVR: '+esc(r['ivr-name'])+(r['ivr-desc']?'\\n'+esc(r['ivr-desc']):''), r['ivr-extension']), 'ivr');
   });
   data.rgs.forEach(r=>{ if(!r['rg-name']) return;
-    setNode(idFor('RingGroup',r['rg-name']), withExt(withDid('Ring Group: '+esc(r['rg-name'])+(r['rg-strategy']?'\\n('+esc(r['rg-strategy'])+')':''), r['rg-directdid']), r['rg-extension']), 'rg');
+    setNode(idFor('RingGroup',r['rg-name']), withExt('Ring Group: '+esc(r['rg-name'])+(r['rg-strategy']?'\\n('+esc(r['rg-strategy'])+')':''), r['rg-extension']), 'rg');
   });
   data.hgs.forEach(r=>{ if(!r['hg-name']) return;
-    setNode(idFor('HuntGroup',r['hg-name']), withExt(withDid('Hunt Group: '+esc(r['hg-name'])+(r['hg-strategy']?'\\n('+esc(r['hg-strategy'])+')':''), r['hg-directdid']), r['hg-extension']), 'hg');
+    setNode(idFor('HuntGroup',r['hg-name']), withExt('Hunt Group: '+esc(r['hg-name'])+(r['hg-strategy']?'\\n('+esc(r['hg-strategy'])+')':''), r['hg-extension']), 'hg');
   });
   data.qs.forEach(r=>{ if(!r['q-name']) return;
-    setNode(idFor('Queue',r['q-name']), withExt(withDid('Call Queue: '+esc(r['q-name'])+(r['q-strategy']?'\\n('+esc(r['q-strategy'])+')':''), r['q-directdid']), r['q-extension']), 'q');
+    setNode(idFor('Queue',r['q-name']), withExt('Call Queue: '+esc(r['q-name'])+(r['q-strategy']?'\\n('+esc(r['q-strategy'])+')':''), r['q-extension']), 'q');
   });
   data.exts.forEach(r=>{ if(!r['ext-num']) return;
     const label='Ext '+esc(r['ext-num'])+(r['ext-user']?': '+esc(r['ext-user']):'');
