@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dealership Call Flow Documentation Template</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --blue:#2563eb; --blue-bg:#dbeafe;
+    --purple:#7c3aed; --purple-bg:#ede9fe;
+    --indigo:#4f46e5; --indigo-bg:#e0e7ff;
+    --amber:#d97706; --amber-bg:#fef3c7;
+    --teal:#0d9488; --teal-bg:#ccfbf1;
+    --green:#16a34a; --green-bg:#dcfce7;
+    --slate:#475569; --slate-bg:#f1f5f9;
+    --red:#dc2626; --red-bg:#fee2e2;
+    --pink:#db2777; --pink-bg:#fce7f3;
+    --border:#d8dee8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    margin:0; padding:24px 32px 60px; background:#f8f9fb; color:#1e2430;
+  }
+  h1{font-size:22px; margin:0 0 4px;}
+  .subtitle{color:#5b6472; font-size:13px; margin-bottom:20px;}
+  .card{
+    background:#fff; border:1px solid var(--border); border-radius:10px;
+    padding:18px 20px; margin-bottom:20px;
+  }
+  .card h2{font-size:15px; margin:0 0 4px; display:flex; align-items:center; gap:8px;}
+  .card .desc{font-size:12.5px; color:#64707d; margin:0 0 12px;}
+  .dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .header-fields{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:#5b6472; margin-bottom:4px; text-transform:uppercase; letter-spacing:.03em;}
+  .field input, .field textarea{width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit;}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.02em;
+    color:#5b6472; border-bottom:1px solid var(--border); padding:6px 6px; white-space:nowrap;
+  }
+  td{padding:4px 6px; border-bottom:1px solid #edf0f4; vertical-align:top;}
+  tr:hover td{background:#fafbfd;}
+  input, select, textarea{
+    width:100%; padding:5px 7px; border:1px solid var(--border); border-radius:5px;
+    font-size:12.5px; font-family:inherit; background:#fff;
+  }
+  textarea{resize:vertical; min-height:32px;}
+  .menu-box{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; font-size:12px; line-height:1.5; min-height:64px;}
+  .tablewrap{overflow-x:auto;}
+  .row-actions{display:flex; gap:8px; margin-top:10px;}
+  button{
+    cursor:pointer; border:1px solid var(--border); background:#fff; border-radius:6px;
+    padding:6px 12px; font-size:12.5px; font-weight:600; color:#334155;
+  }
+  button:hover{background:#f1f4f8;}
+  button.primary{background:#1e2430; color:#fff; border-color:#1e2430;}
+  button.primary:hover{background:#333c4d;}
+  button.danger-ghost{border:none; background:none; color:#94a3b8; font-size:15px; padding:2px 6px;}
+  button.danger-ghost:hover{color:var(--red); background:none;}
+  .del-cell{width:28px; text-align:center;}
+  .legend{display:flex; flex-wrap:wrap; gap:14px; font-size:12px; color:#475569; margin-top:2px;}
+  .legend span{display:flex; align-items:center; gap:6px;}
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+  .format-hint{font-size:11.5px; color:#8a93a1; margin-top:6px;}
+  #flowchartOutput{
+    background:#fff; border:1px dashed var(--border); border-radius:10px; padding:18px;
+    min-height:120px; overflow:auto; text-align:center;
+  }
+  #flowchartOutput svg{display:block; margin:0 auto;}
+  .empty-hint{color:#94a3b8; font-size:13px; display:inline-block; margin-top:40px;}
+  .top-actions{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;}
+</style>
+</head>
+<body>
+
+<div class="top-actions">
+  <div>
+    <h1>Dealership Call Flow Documentation Template</h1>
+    <div class="subtitle">Record a dealership's phone system configuration, then generate a visual call-flow diagram from what you enter.</div>
+  </div>
+  <div class="toolbar">
+    <button id="loadExampleBtn">Load Example (Example Motors)</button>
+    <button id="exportBtn">Export Data (.json)</button>
+    <button id="importBtn">Import Data (.json)</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none;">
+    <button id="clearBtn">Clear All</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Dealership Info</h2>
+  <div class="header-fields">
+    <div class="field"><label>Dealership Name</label><input id="dealershipName" placeholder="e.g. Example Motors"></div>
+    <div class="field"><label>Main Number</label><input id="mainNumber" placeholder="e.g. (555) 100-2000"></div>
+    <div class="field"><label>Phone System / PBX</label><input id="pbxSystem" placeholder="e.g. Avaya IP Office, FreePBX, CDK Voice Connect"></div>
+    <div class="field"><label>Documented By / Date</label><input id="preparedBy" placeholder="e.g. Andy White — 2026-07-28"></div>
+    <div class="field"><label>Direct DID Range</label><input id="directDidRange" placeholder="e.g. (555) 100-3000 – 3099"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2><span class="dot" style="background:var(--blue)"></span>DIDs / External Numbers</h2>
+  <p class="desc">Every phone number that comes into the dealership from the carrier, and what it routes to first.</p>
+  <div class="tablewrap">
+  <table id="didsTable">
+    <thead><tr>
+      <th style="width:14%">DID / Phone #</th><th style="width:18%">Description</th><th style="width:12%">Carrier</th>
+      <th style="width:14%">Routes To (Type)</th><th style="width:16%">Destination Name</th><th>Notes</th><th class="del-cell"></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+  <div class="row-actions"><button onclick="addDidRow()">+ Add DID</button></div>
+</div>
+
+<div class="card">
+  <h2><span class="dot" style="background:var(--purple)"></span>Auto Attendants (if applicable)</h2>
+  <p class="desc">Menu format for "Menu Options" — one option per line reads best: <code>digit=Type:Name</code> (semicolons also work if you prefer one line). e.g.<br><code>1=RingGroup:Sales<br>2=Queue:Service<br>3=HuntGroup:Parts<br>0=Extension:100</code><br>Timeout field uses <code>Type:Name</code>. Valid types: AutoAttendant, IVR, RingGroup, HuntGroup, Queue, Extension, Voicemail, External.</p>
+  <div class="tablewrap">
+  <table id="aaTable">
+    <thead><tr>
+      <th style="width:10%">Name</th><th style="width:11%">Business-Hours Greeting</th><th style="width:11%">After-Hours Greeting</th>
+      <th style="width:24%">Menu Options</th><th style="width:10%">No-Input Timeout →</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+  <div class="row-actions"><button onclick="addAaRow()">+ Add Auto Attendant</button></div>
+</div>
+
+<div class="card">
+  <h2><span class="dot" style="background:var(--indigo)"></span>IVR (if applicable)</h2>
+  <p class="desc">Self-service menus beyond a simple auto attendant (e.g. service status lookup, payment IVR, DMS-integrated prompts). Same menu format as Auto Attendants — one option per line: <code>digit=Type:Name</code>.</p>
+  <div class="tablewrap">
+  <table id="ivrTable">
+    <thead><tr>
+      <th style="width:10%">Name</th><th style="width:15%">Purpose / Description</th>
+      <th style="width:27%">Menu Options</th><th style="width:13%">Fallback → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+  <div class="row-actions"><button onclick="addIvrRow()">+ Add IVR</button></div>
+</div>
+
+<div class="card">
+  <h2><span class="dot" style="background:var(--amber)"></span>Ring Groups (if applicable)</h2>
+  <p class="desc">Extensions that ring together (simultaneous/broadcast style). Members = comma-separated extensions — start typing in that field to pick from what's entered in Users / Extensions below.</p>
+  <div class="tablewrap">
+  <table id="rgTable">
+    <thead><tr>
+      <th style="width:12%">Name</th><th style="width:16%">Members (extensions)</th><th style="width:12%">Ring Strategy</th>
+      <th style="width:9%">Timeout (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+  <div class="row-actions"><button onclick="addRgRow()">+ Add Ring Group</button></div>
+</div>
+
+<div class="card">
+  <h2><span class="dot" style="background:var(--teal)"></span>Hunt Groups (if applicable)</h2>
+  <p class="desc">Extensions rung in order. Members = ordered extensions, e.g. <code>201&gt;202&gt;203</code> — start typing to pick from Users / Extensions below (order is preserved as you type).</p>
+  <div class="tablewrap">
+  <table id="hgTable">
+    <thead><tr>
+      <th style="width:12%">Name</th><th style="width:16%">Members (ordered)</th><th style="width:12%">Hunt Strategy</th>
+      <th style="width:9%">Timeout/step (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+  <div class="row-actions"><button onclick="addHgRow()">+ Add Hunt Group</button></div>
+</div>
+
+<div class="card">
+  <h2><span class="dot" style="background:var(--green)"></span>Call Queues (if applicable)</h2>
+  <p class="desc">Agent-staffed queues with hold/wait behavior. Agents = comma-separated extensions — start typing to pick from Users / Extensions below.</p>
+  <div class="tablewrap">
+  <table id="qTable">
+    <thead><tr>
+      <th style="width:12%">Name</th><th style="width:16%">Agents (extensions)</th><th style="width:12%">Strategy</th>
+      <th style="width:9%">Max Wait (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+  <div class="row-actions"><button onclick="addQRow()">+ Add Call Queue</button></div>
+</div>
+
+<div class="card">
+  <h2><span class="dot" style="background:var(--slate)"></span>Users / Extensions</h2>
+  <p class="desc">Individual user extensions — the leaves of the call flow.</p>
+  <div class="tablewrap">
+  <table id="extTable">
+    <thead><tr>
+      <th style="width:12%">Extension</th><th style="width:22%">User Name</th><th style="width:20%">Department</th>
+      <th style="width:20%">Direct DID (if any)</th><th style="width:14%">Voicemail?</th><th class="del-cell"></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  </div>
+  <div class="row-actions"><button onclick="addExtRow()">+ Add Extension</button></div>
+</div>
+
+<datalist id="extensionsDatalist"></datalist>
+
+<div class="card">
+  <h2>Special Routing / Notes</h2>
+  <p class="desc">Holiday schedules, closed-hours behavior, emergency/overflow routing, escalation contacts, anything that doesn't fit above.</p>
+  <textarea id="specialRouting" style="min-height:80px;" placeholder="e.g. Sundays &amp; holidays route to After-Hours Auto Attendant greeting → General Voicemail. Snow days: manager can force all lines to Voicemail via feature code *71."></textarea>
+</div>
+
+<div class="card">
+  <h2>Call Flow Diagram</h2>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--blue)"></span>DID / External #</span>
+    <span><span class="dot" style="background:var(--purple)"></span>Auto Attendant</span>
+    <span><span class="dot" style="background:var(--indigo)"></span>IVR</span>
+    <span><span class="dot" style="background:var(--amber)"></span>Ring Group</span>
+    <span><span class="dot" style="background:var(--teal)"></span>Hunt Group</span>
+    <span><span class="dot" style="background:var(--green)"></span>Call Queue</span>
+    <span><span class="dot" style="background:var(--slate)"></span>Extension</span>
+    <span><span class="dot" style="background:var(--red)"></span>Voicemail</span>
+    <span><span class="dot" style="background:var(--pink)"></span>External Forward</span>
+  </div>
+  <div class="row-actions" style="align-items:center;">
+    <button class="primary" onclick="generateFlowchart()">Generate Flow Chart</button>
+    <button onclick="zoomOut()" title="Zoom out">− Zoom Out</button>
+    <span id="zoomLabel" style="font-size:12.5px; font-weight:600; color:#475569; min-width:46px; text-align:center; display:inline-block;">200%</span>
+    <button onclick="zoomIn()" title="Zoom in">+ Zoom In</button>
+    <button onclick="resetZoom()" title="Reset to default zoom">Reset Zoom</button>
+    <button id="directionBtn" onclick="toggleDirection()" title="Switch diagram layout direction">Layout: Top-Down</button>
+    <button onclick="exportFlowchartPng()" title="Download as PNG">Export as Image</button>
+    <button onclick="exportFlowchartPdf()" title="Download as PDF">Export as PDF</button>
+  </div>
+  <div id="flowchartOutput" style="margin-top:14px;"><span class="empty-hint">Fill in the tables above, then click "Generate Flow Chart".</span></div>
+</div>
+
+<script>
+// htmlLabels:false forces plain SVG text (no <foreignObject>/HTML) so the diagram can be safely
+// drawn into a <canvas> and exported — canvases are "tainted" (export blocked) by SVGs containing HTML.
+mermaid.initialize({ startOnLoad: false, flowchart: { curve: 'basis', htmlLabels: false } });
+
+/* ---------- row builders ---------- */
+function delCell(){ const td=document.createElement('td'); td.className='del-cell';
+  const b=document.createElement('button'); b.className='danger-ghost'; b.innerHTML='&times;';
+  b.onclick=function(){ this.closest('tr').remove(); refreshExtensionDatalist(); }; td.appendChild(b); return td; }
+
+function textCell(cls, placeholder, listId){ const td=document.createElement('td');
+  const i=document.createElement('input'); i.className=cls; i.placeholder=placeholder||'';
+  if(listId) i.setAttribute('list', listId);
+  td.appendChild(i); return td; }
+
+function selectCell(cls, options){ const td=document.createElement('td');
+  const s=document.createElement('select'); s.className=cls;
+  options.forEach(o=>{ const opt=document.createElement('option'); opt.value=o; opt.textContent=o; s.appendChild(opt); });
+  td.appendChild(s); return td; }
+
+function textareaCell(cls, placeholder, rows){ const td=document.createElement('td');
+  const t=document.createElement('textarea'); t.className=cls+' menu-box'; t.placeholder=placeholder||''; t.rows=rows||2;
+  td.appendChild(t); return td; }
+
+const ROUTE_TYPES=['AutoAttendant','IVR','RingGroup','HuntGroup','Queue','Extension','Voicemail','External'];
+
+function addDidRow(vals){
+  const tr=document.createElement('tr');
+  tr.appendChild(textCell('did-num','555-100-2000'));
+  tr.appendChild(textCell('did-desc','Main Line'));
+  tr.appendChild(textCell('did-carrier','e.g. AT&T'));
+  tr.appendChild(selectCell('did-type',ROUTE_TYPES));
+  tr.appendChild(textCell('did-destname','e.g. Main AA'));
+  tr.appendChild(textCell('did-notes',''));
+  tr.appendChild(delCell());
+  document.querySelector('#didsTable tbody').appendChild(tr);
+  if(vals) fillRow(tr,['did-num','did-desc','did-carrier','did-type','did-destname','did-notes'],vals);
+}
+function addAaRow(vals){
+  const tr=document.createElement('tr');
+  tr.appendChild(textCell('aa-name','Main AA'));
+  tr.appendChild(textCell('aa-bh','"Thank you for calling..."'));
+  tr.appendChild(textCell('aa-ah','"We are currently closed..."'));
+  tr.appendChild(textareaCell('aa-menu','1=RingGroup:Sales\n2=Queue:Service\n0=Extension:100',3));
+  tr.appendChild(textCell('aa-timeout','Voicemail:General'));
+  tr.appendChild(textCell('aa-directdid',''));
+  tr.appendChild(textCell('aa-extension',''));
+  tr.appendChild(delCell());
+  document.querySelector('#aaTable tbody').appendChild(tr);
+  if(vals) fillRow(tr,['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension'],vals);
+}
+function addIvrRow(vals){
+  const tr=document.createElement('tr');
+  tr.appendChild(textCell('ivr-name','Service Status IVR'));
+  tr.appendChild(textCell('ivr-desc','Looks up RO status by phone number via DMS'));
+  tr.appendChild(textareaCell('ivr-menu','1=Extension:301\n2=Voicemail:Service',3));
+  tr.appendChild(textCell('ivr-fallback','Queue:Service'));
+  tr.appendChild(textCell('ivr-directdid',''));
+  tr.appendChild(textCell('ivr-extension',''));
+  tr.appendChild(delCell());
+  document.querySelector('#ivrTable tbody').appendChild(tr);
+  if(vals) fillRow(tr,['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-directdid','ivr-extension'],vals);
+}
+function addRgRow(vals){
+  const tr=document.createElement('tr');
+  tr.appendChild(textCell('rg-name','Sales'));
+  tr.appendChild(textCell('rg-members','101,102,103','extensionsDatalist'));
+  tr.appendChild(selectCell('rg-strategy',['Simultaneous','Sequential','Ring All']));
+  tr.appendChild(textCell('rg-timeout','20'));
+  tr.appendChild(textCell('rg-overflow','Voicemail:Sales'));
+  tr.appendChild(textCell('rg-directdid',''));
+  tr.appendChild(textCell('rg-extension',''));
+  tr.appendChild(delCell());
+  document.querySelector('#rgTable tbody').appendChild(tr);
+  if(vals) fillRow(tr,['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-directdid','rg-extension'],vals);
+}
+function addHgRow(vals){
+  const tr=document.createElement('tr');
+  tr.appendChild(textCell('hg-name','Parts'));
+  tr.appendChild(textCell('hg-members','201>202','extensionsDatalist'));
+  tr.appendChild(selectCell('hg-strategy',['Linear','Circular','Longest Idle']));
+  tr.appendChild(textCell('hg-timeout','15'));
+  tr.appendChild(textCell('hg-overflow','Voicemail:Parts'));
+  tr.appendChild(textCell('hg-directdid',''));
+  tr.appendChild(textCell('hg-extension',''));
+  tr.appendChild(delCell());
+  document.querySelector('#hgTable tbody').appendChild(tr);
+  if(vals) fillRow(tr,['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-directdid','hg-extension'],vals);
+}
+function addQRow(vals){
+  const tr=document.createElement('tr');
+  tr.appendChild(textCell('q-name','Service'));
+  tr.appendChild(textCell('q-agents','301,302,303','extensionsDatalist'));
+  tr.appendChild(selectCell('q-strategy',['Ring All','Round Robin','Longest Idle','Fewest Calls']));
+  tr.appendChild(textCell('q-maxwait','180'));
+  tr.appendChild(textCell('q-overflow','Voicemail:Service'));
+  tr.appendChild(textCell('q-directdid',''));
+  tr.appendChild(textCell('q-extension',''));
+  tr.appendChild(delCell());
+  document.querySelector('#qTable tbody').appendChild(tr);
+  if(vals) fillRow(tr,['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-directdid','q-extension'],vals);
+}
+function addExtRow(vals){
+  const tr=document.createElement('tr');
+  tr.appendChild(textCell('ext-num','101'));
+  tr.appendChild(textCell('ext-user','Jane Doe'));
+  tr.appendChild(textCell('ext-dept','Sales'));
+  tr.appendChild(textCell('ext-directdid',''));
+  tr.appendChild(selectCell('ext-vm',['Y','N']));
+  tr.appendChild(delCell());
+  document.querySelector('#extTable tbody').appendChild(tr);
+  if(vals) fillRow(tr,['ext-num','ext-user','ext-dept','ext-directdid','ext-vm'],vals);
+  refreshExtensionDatalist();
+}
+function fillRow(tr, classes, vals){
+  classes.forEach((c,i)=>{ const el=tr.querySelector('.'+c); if(el && vals[i]!==undefined) el.value=vals[i]; });
+}
+
+/* keep the extension autocomplete list in sync as extension rows are typed into */
+function refreshExtensionDatalist(){
+  const dl=document.getElementById('extensionsDatalist');
+  if(!dl) return;
+  dl.innerHTML='';
+  document.querySelectorAll('#extTable tbody tr').forEach(tr=>{
+    const num=tr.querySelector('.ext-num').value.trim();
+    const user=tr.querySelector('.ext-user').value.trim();
+    if(!num) return;
+    const opt=document.createElement('option');
+    opt.value=num;
+    opt.label=user? (num+' - '+user) : num;
+    dl.appendChild(opt);
+  });
+}
+document.getElementById('extTable').addEventListener('input', function(e){
+  if(e.target.classList.contains('ext-num') || e.target.classList.contains('ext-user')) refreshExtensionDatalist();
+});
+
+/* start with a few blank rows */
+[addDidRow, addAaRow, addIvrRow, addRgRow, addHgRow, addQRow].forEach(f=>f());
+addExtRow(); addExtRow();
+
+/* ---------- data get/set ---------- */
+function rowsOf(tableId, classes){
+  return Array.from(document.querySelectorAll('#'+tableId+' tbody tr')).map(tr=>{
+    const o={}; classes.forEach(c=>{ const el=tr.querySelector('.'+c); o[c]=el?el.value.trim():''; }); return o;
+  });
+}
+function collectData(){
+  return {
+    dealershipName: document.getElementById('dealershipName').value,
+    mainNumber: document.getElementById('mainNumber').value,
+    pbxSystem: document.getElementById('pbxSystem').value,
+    preparedBy: document.getElementById('preparedBy').value,
+    directDidRange: document.getElementById('directDidRange').value,
+    specialRouting: document.getElementById('specialRouting').value,
+    dids: rowsOf('didsTable',['did-num','did-desc','did-carrier','did-type','did-destname','did-notes']),
+    aas: rowsOf('aaTable',['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension']),
+    ivrs: rowsOf('ivrTable',['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-directdid','ivr-extension']),
+    rgs: rowsOf('rgTable',['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-directdid','rg-extension']),
+    hgs: rowsOf('hgTable',['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-directdid','hg-extension']),
+    qs: rowsOf('qTable',['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-directdid','q-extension']),
+    exts: rowsOf('extTable',['ext-num','ext-user','ext-dept','ext-directdid','ext-vm'])
+  };
+}
+function clearTable(tableId){ document.querySelector('#'+tableId+' tbody').innerHTML=''; }
+function loadData(d){
+  document.getElementById('dealershipName').value=d.dealershipName||'';
+  document.getElementById('mainNumber').value=d.mainNumber||'';
+  document.getElementById('pbxSystem').value=d.pbxSystem||'';
+  document.getElementById('preparedBy').value=d.preparedBy||'';
+  document.getElementById('directDidRange').value=d.directDidRange||'';
+  document.getElementById('specialRouting').value=d.specialRouting||'';
+  clearTable('didsTable'); (d.dids||[]).forEach(r=>addDidRow(['did-num','did-desc','did-carrier','did-type','did-destname','did-notes'].map(k=>r[k])));
+  clearTable('aaTable'); (d.aas||[]).forEach(r=>addAaRow(['aa-name','aa-bh','aa-ah','aa-menu','aa-timeout','aa-directdid','aa-extension'].map(k=>r[k])));
+  clearTable('ivrTable'); (d.ivrs||[]).forEach(r=>addIvrRow(['ivr-name','ivr-desc','ivr-menu','ivr-fallback','ivr-directdid','ivr-extension'].map(k=>r[k])));
+  clearTable('rgTable'); (d.rgs||[]).forEach(r=>addRgRow(['rg-name','rg-members','rg-strategy','rg-timeout','rg-overflow','rg-directdid','rg-extension'].map(k=>r[k])));
+  clearTable('hgTable'); (d.hgs||[]).forEach(r=>addHgRow(['hg-name','hg-members','hg-strategy','hg-timeout','hg-overflow','hg-directdid','hg-extension'].map(k=>r[k])));
+  clearTable('qTable'); (d.qs||[]).forEach(r=>addQRow(['q-name','q-agents','q-strategy','q-maxwait','q-overflow','q-directdid','q-extension'].map(k=>r[k])));
+  clearTable('extTable'); (d.exts||[]).forEach(r=>addExtRow(['ext-num','ext-user','ext-dept','ext-directdid','ext-vm'].map(k=>r[k])));
+}
+
+/* ---------- export / import ---------- */
+document.getElementById('exportBtn').onclick=function(){
+  const data=collectData();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  const name=(data.dealershipName||'dealership').replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+  a.href=URL.createObjectURL(blob); a.download=name+'_call_flow.json'; a.click();
+};
+document.getElementById('importBtn').onclick=function(){ document.getElementById('importFile').click(); };
+document.getElementById('importFile').onchange=function(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(evt){ try{ loadData(JSON.parse(evt.target.result)); }catch(err){ alert('Could not read file: '+err.message); } };
+  reader.readAsText(file);
+};
+document.getElementById('clearBtn').onclick=function(){
+  if(!confirm('Clear all entered data?')) return;
+  loadData({dids:[],aas:[],ivrs:[],rgs:[],hgs:[],qs:[],exts:[]});
+  document.getElementById('flowchartOutput').innerHTML='<span class="empty-hint">Fill in the tables above, then click "Generate Flow Chart".</span>';
+};
+
+/* ---------- example data ---------- */
+document.getElementById('loadExampleBtn').onclick=function(){
+  loadData({
+    dealershipName:'Example Motors', mainNumber:'(555) 100-2000', pbxSystem:'Avaya IP Office',
+    preparedBy:'Andy White — 2026-07-28', directDidRange:'(555) 100-3000 – 3099',
+    specialRouting:'Sundays & holidays: Main AA plays after-hours greeting and routes straight to Voicemail:General. Snow/closure days: GM can force all DIDs to Voicemail via feature code *71.',
+    dids:[
+      {'did-num':'(555) 100-2000','did-desc':'Main Line','did-carrier':'AT&T','did-type':'AutoAttendant','did-destname':'Main AA','did-notes':'Published number'},
+      {'did-num':'(555) 100-2001','did-desc':'Sales Direct','did-carrier':'AT&T','did-type':'RingGroup','did-destname':'Sales','did-notes':'On website'},
+      {'did-num':'(555) 100-2002','did-desc':'Service Direct','did-carrier':'AT&T','did-type':'Queue','did-destname':'Service','did-notes':'On service texts'}
+    ],
+    aas:[
+      {'aa-name':'Main AA','aa-bh':'"Thank you for calling Example Motors..."','aa-ah':'"We are currently closed..."',
+       'aa-menu':'1=RingGroup:Sales\n2=Queue:Service\n3=HuntGroup:Parts\n4=IVR:Service Status IVR\n0=Extension:100','aa-timeout':'Voicemail:General','aa-directdid':'','aa-extension':'700'}
+    ],
+    ivrs:[
+      {'ivr-name':'Service Status IVR','ivr-desc':'Looks up RO status by phone number via DMS','ivr-menu':'1=Extension:301\n2=Voicemail:Service','ivr-fallback':'Queue:Service','ivr-directdid':'','ivr-extension':'710'}
+    ],
+    rgs:[
+      {'rg-name':'Sales','rg-members':'101,102,103','rg-strategy':'Simultaneous','rg-timeout':'20','rg-overflow':'Voicemail:Sales','rg-directdid':'(555) 100-2001','rg-extension':'750'}
+    ],
+    hgs:[
+      {'hg-name':'Parts','hg-members':'201>202','hg-strategy':'Linear','hg-timeout':'15','hg-overflow':'Voicemail:Parts','hg-directdid':'','hg-extension':'760'}
+    ],
+    qs:[
+      {'q-name':'Service','q-agents':'301,302,303','q-strategy':'Round Robin','q-maxwait':'180','q-overflow':'Voicemail:Service','q-directdid':'(555) 100-2002','q-extension':'770'}
+    ],
+    exts:[
+      {'ext-num':'100','ext-user':'Front Desk','ext-dept':'Reception','ext-directdid':'','ext-vm':'Y'},
+      {'ext-num':'101','ext-user':'John Smith','ext-dept':'Sales','ext-directdid':'(555) 100-3001','ext-vm':'Y'},
+      {'ext-num':'102','ext-user':'Jane Doe','ext-dept':'Sales','ext-directdid':'','ext-vm':'Y'},
+      {'ext-num':'103','ext-user':'Mike Lee','ext-dept':'Sales','ext-directdid':'','ext-vm':'Y'},
+      {'ext-num':'201','ext-user':'Parts Counter 1','ext-dept':'Parts','ext-directdid':'','ext-vm':'Y'},
+      {'ext-num':'202','ext-user':'Parts Counter 2','ext-dept':'Parts','ext-directdid':'','ext-vm':'Y'},
+      {'ext-num':'301','ext-user':'Alex Rivera','ext-dept':'Service','ext-directdid':'','ext-vm':'Y'},
+      {'ext-num':'302','ext-user':'Sam Park','ext-dept':'Service','ext-directdid':'','ext-vm':'Y'},
+      {'ext-num':'303','ext-user':'Chris Nguyen','ext-dept':'Service','ext-directdid':'','ext-vm':'Y'}
+    ]
+  });
+  generateFlowchart();
+};
+
+/* ---------- flowchart generation ---------- */
+const TYPE_PREFIX={AutoAttendant:'AA',IVR:'IVR',RingGroup:'RG',HuntGroup:'HG',Queue:'Q',Extension:'EXT',Voicemail:'VM',External:'EXTN'};
+const TYPE_CLASS ={AutoAttendant:'aa',IVR:'ivr',RingGroup:'rg',HuntGroup:'hg',Queue:'q',Extension:'ext',Voicemail:'vm',External:'extn'};
+function defaultLabel(type,name){
+  const map={AutoAttendant:'Auto Attendant',IVR:'IVR',RingGroup:'Ring Group',HuntGroup:'Hunt Group',Queue:'Call Queue',Extension:'Ext',Voicemail:'Voicemail',External:'External'};
+  return (map[type]||type)+': '+name;
+}
+function sanitize(s){ return (s||'').trim().replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'unnamed'; }
+function esc(s){ return (s||'').replace(/"/g,"'"); }
+function withDid(label, directdid){ return directdid ? label+'\\nDirect DID: '+esc(directdid) : label; }
+function withExt(label, extension){ return extension ? label+'\\nExt: '+esc(extension) : label; }
+
+/* appends a footer (dealership / PBX / documented-by) directly into the SVG so it shows up
+   on-screen and travels along with PNG/PDF exports, which rasterize this same SVG element */
+function addFooterToSvg(svgEl){
+  const dealership=document.getElementById('dealershipName').value.trim();
+  const pbx=document.getElementById('pbxSystem').value.trim();
+  const prepared=document.getElementById('preparedBy').value.trim();
+  const parts=[dealership, pbx&&('PBX: '+pbx), prepared&&('Documented by: '+prepared)].filter(Boolean);
+  if(parts.length===0) return;
+  const footerLine=parts.join('   •   ');
+
+  let vb=svgEl.viewBox && svgEl.viewBox.baseVal;
+  let x=0,y=0,w=parseFloat(svgEl.getAttribute('width'))||800,h=parseFloat(svgEl.getAttribute('height'))||500;
+  if(vb && vb.width){ x=vb.x; y=vb.y; w=vb.width; h=vb.height; }
+
+  const footerH=32;
+  svgEl.setAttribute('viewBox', x+' '+y+' '+w+' '+(h+footerH));
+
+  const ns='http://www.w3.org/2000/svg';
+  const line=document.createElementNS(ns,'line');
+  line.setAttribute('x1', x+12); line.setAttribute('x2', x+w-12);
+  line.setAttribute('y1', y+h+8); line.setAttribute('y2', y+h+8);
+  line.setAttribute('stroke','#d8dee8'); line.setAttribute('stroke-width','1');
+  svgEl.appendChild(line);
+
+  const text=document.createElementNS(ns,'text');
+  text.setAttribute('x', x+w/2);
+  text.setAttribute('y', y+h+footerH-6);
+  text.setAttribute('text-anchor','middle');
+  text.setAttribute('font-family','ui-sans-serif,system-ui,-apple-system,sans-serif');
+  text.setAttribute('font-size','13');
+  text.setAttribute('fill','#64748b');
+  text.textContent=footerLine;
+  svgEl.appendChild(text);
+}
+function idFor(type,name){ return (TYPE_PREFIX[type]||'X')+'_'+sanitize(name); }
+function parseTypeName(str){
+  if(!str) return null;
+  const idx=str.indexOf(':'); if(idx<0) return null;
+  const type=str.slice(0,idx).trim(), name=str.slice(idx+1).trim();
+  if(!TYPE_PREFIX[type] || !name) return null;
+  return {type,name};
+}
+
+function generateFlowchart(){
+  const data=collectData();
+  const nodeDefs={}, nodeClass={}, edges=[];
+  function setNode(id,label,cls){ nodeDefs[id]=label; nodeClass[id]=cls; }
+  function ensureNode(id,label,cls){ if(!(id in nodeDefs)){ nodeDefs[id]=label; nodeClass[id]=cls; } }
+  function addEdge(from,to,label){ edges.push({from,to,label}); }
+
+  // definer passes (authoritative labels)
+  data.dids.forEach(r=>{ if(!r['did-num']) return;
+    const id='DID_'+sanitize(r['did-num']);
+    setNode(id, 'DID: '+esc(r['did-num'])+(r['did-desc']?'\\n'+esc(r['did-desc']):''), 'did');
+  });
+  data.aas.forEach(r=>{ if(!r['aa-name']) return;
+    setNode(idFor('AutoAttendant',r['aa-name']), withExt(withDid('Auto Attendant: '+esc(r['aa-name']), r['aa-directdid']), r['aa-extension']), 'aa');
+  });
+  data.ivrs.forEach(r=>{ if(!r['ivr-name']) return;
+    setNode(idFor('IVR',r['ivr-name']), withExt(withDid('IVR: '+esc(r['ivr-name'])+(r['ivr-desc']?'\\n'+esc(r['ivr-desc']):''), r['ivr-directdid']), r['ivr-extension']), 'ivr');
+  });
+  data.rgs.forEach(r=>{ if(!r['rg-name']) return;
+    setNode(idFor('RingGroup',r['rg-name']), withExt(withDid('Ring Group: '+esc(r['rg-name'])+(r['rg-strategy']?'\\n('+esc(r['rg-strategy'])+')':''), r['rg-directdid']), r['rg-extension']), 'rg');
+  });
+  data.hgs.forEach(r=>{ if(!r['hg-name']) return;
+    setNode(idFor('HuntGroup',r['hg-name']), withExt(withDid('Hunt Group: '+esc(r['hg-name'])+(r['hg-strategy']?'\\n('+esc(r['hg-strategy'])+')':''), r['hg-directdid']), r['hg-extension']), 'hg');
+  });
+  data.qs.forEach(r=>{ if(!r['q-name']) return;
+    setNode(idFor('Queue',r['q-name']), withExt(withDid('Call Queue: '+esc(r['q-name'])+(r['q-strategy']?'\\n('+esc(r['q-strategy'])+')':''), r['q-directdid']), r['q-extension']), 'q');
+  });
+  data.exts.forEach(r=>{ if(!r['ext-num']) return;
+    const label='Ext '+esc(r['ext-num'])+(r['ext-user']?': '+esc(r['ext-user']):'');
+    setNode(idFor('Extension',r['ext-num']), withDid(label, r['ext-directdid']), 'ext');
+  });
+
+  // edges
+  data.dids.forEach(r=>{ if(!r['did-num']||!r['did-type']||!r['did-destname']) return;
+    const fromId='DID_'+sanitize(r['did-num']);
+    const toId=idFor(r['did-type'],r['did-destname']);
+    ensureNode(toId, defaultLabel(r['did-type'],r['did-destname']), TYPE_CLASS[r['did-type']]);
+    addEdge(fromId,toId,null);
+  });
+  data.aas.forEach(r=>{ if(!r['aa-name']) return;
+    const fromId=idFor('AutoAttendant',r['aa-name']);
+    (r['aa-menu']||'').split(/[;\n]+/).forEach(tok=>{
+      tok=tok.trim(); if(!tok) return;
+      const eq=tok.indexOf('='); if(eq<0) return;
+      const digit=tok.slice(0,eq).trim(); const rest=parseTypeName(tok.slice(eq+1));
+      if(!rest) return;
+      const toId=idFor(rest.type,rest.name);
+      ensureNode(toId, defaultLabel(rest.type,rest.name), TYPE_CLASS[rest.type]);
+      addEdge(fromId,toId,'Press '+digit);
+    });
+    const to=parseTypeName(r['aa-timeout']);
+    if(to){ const toId=idFor(to.type,to.name); ensureNode(toId, defaultLabel(to.type,to.name), TYPE_CLASS[to.type]); addEdge(fromId,toId,'timeout'); }
+  });
+  data.ivrs.forEach(r=>{ if(!r['ivr-name']) return;
+    const fromId=idFor('IVR',r['ivr-name']);
+    (r['ivr-menu']||'').split(/[;\n]+/).forEach(tok=>{
+      tok=tok.trim(); if(!tok) return;
+      const eq=tok.indexOf('='); if(eq<0) return;
+      const digit=tok.slice(0,eq).trim(); const rest=parseTypeName(tok.slice(eq+1));
+      if(!rest) return;
+      const toId=idFor(rest.type,rest.name);
+      ensureNode(toId, defaultLabel(rest.type,rest.name), TYPE_CLASS[rest.type]);
+      addEdge(fromId,toId,'Press '+digit);
+    });
+    const fb=parseTypeName(r['ivr-fallback']);
+    if(fb){ const toId=idFor(fb.type,fb.name); ensureNode(toId, defaultLabel(fb.type,fb.name), TYPE_CLASS[fb.type]); addEdge(fromId,toId,'fallback'); }
+  });
+  data.rgs.forEach(r=>{ if(!r['rg-name']) return;
+    const fromId=idFor('RingGroup',r['rg-name']);
+    (r['rg-members']||'').split(/[,\s]+/).filter(Boolean).forEach(ext=>{
+      const toId=idFor('Extension',ext); ensureNode(toId, defaultLabel('Extension',ext), 'ext'); addEdge(fromId,toId,null);
+    });
+    const ov=parseTypeName(r['rg-overflow']);
+    if(ov){ const toId=idFor(ov.type,ov.name); ensureNode(toId, defaultLabel(ov.type,ov.name), TYPE_CLASS[ov.type]); addEdge(fromId,toId,'no answer'); }
+  });
+  data.hgs.forEach(r=>{ if(!r['hg-name']) return;
+    const fromId=idFor('HuntGroup',r['hg-name']);
+    (r['hg-members']||'').split(/[>,\s]+/).filter(Boolean).forEach((ext,i)=>{
+      const toId=idFor('Extension',ext); ensureNode(toId, defaultLabel('Extension',ext), 'ext'); addEdge(fromId,toId,'#'+(i+1));
+    });
+    const ov=parseTypeName(r['hg-overflow']);
+    if(ov){ const toId=idFor(ov.type,ov.name); ensureNode(toId, defaultLabel(ov.type,ov.name), TYPE_CLASS[ov.type]); addEdge(fromId,toId,'no answer'); }
+  });
+  data.qs.forEach(r=>{ if(!r['q-name']) return;
+    const fromId=idFor('Queue',r['q-name']);
+    (r['q-agents']||'').split(/[,\s]+/).filter(Boolean).forEach(ext=>{
+      const toId=idFor('Extension',ext); ensureNode(toId, defaultLabel('Extension',ext), 'ext'); addEdge(fromId,toId,'agent');
+    });
+    const ov=parseTypeName(r['q-overflow']);
+    if(ov){ const toId=idFor(ov.type,ov.name); ensureNode(toId, defaultLabel(ov.type,ov.name), TYPE_CLASS[ov.type]); addEdge(fromId,toId,'max wait'); }
+  });
+
+  const nodeIds=Object.keys(nodeDefs);
+  if(nodeIds.length===0){
+    document.getElementById('flowchartOutput').innerHTML='<span class="empty-hint">No data yet — fill in at least one DID or table row, then generate.</span>';
+    return;
+  }
+
+  let lines=['flowchart '+chartDirection];
+  nodeIds.forEach(id=>{ lines.push(id+'["'+nodeDefs[id]+'"]'); });
+  edges.forEach(e=>{ lines.push(e.from+' -->'+(e.label?'|'+e.label+'|':'')+' '+e.to); });
+  lines.push('classDef did fill:#dbeafe,stroke:#2563eb,color:#1e3a8a');
+  lines.push('classDef aa fill:#ede9fe,stroke:#7c3aed,color:#4c1d95');
+  lines.push('classDef ivr fill:#e0e7ff,stroke:#4f46e5,color:#312e81');
+  lines.push('classDef rg fill:#fef3c7,stroke:#d97706,color:#78350f');
+  lines.push('classDef hg fill:#ccfbf1,stroke:#0d9488,color:#134e4a');
+  lines.push('classDef q fill:#dcfce7,stroke:#16a34a,color:#14532d');
+  lines.push('classDef ext fill:#f1f5f9,stroke:#475569,color:#1e293b');
+  lines.push('classDef vm fill:#fee2e2,stroke:#dc2626,color:#7f1d1d');
+  lines.push('classDef extn fill:#fce7f3,stroke:#db2777,color:#831843');
+  Object.keys(nodeClass).forEach(id=>{ lines.push('class '+id+' '+nodeClass[id]); });
+
+  const definition=lines.join('\n');
+  const container=document.getElementById('flowchartOutput');
+  mermaid.render('flowchartSvg_'+Date.now(), definition).then(({svg})=>{
+    container.innerHTML=svg;
+    const svgEl=container.querySelector('svg');
+    if(svgEl){
+      svgEl.removeAttribute('style');
+      addFooterToSvg(svgEl);
+      if(svgEl.viewBox && svgEl.viewBox.baseVal && svgEl.viewBox.baseVal.width){
+        chartBaseW=svgEl.viewBox.baseVal.width; chartBaseH=svgEl.viewBox.baseVal.height;
+      } else {
+        chartBaseW=parseFloat(svgEl.getAttribute('width'))||800; chartBaseH=parseFloat(svgEl.getAttribute('height'))||500;
+      }
+      currentSvgEl=svgEl;
+      zoomLevel=2; // default to twice natural size
+      applyZoom();
+    }
+  }).catch(err=>{ container.innerHTML='<span class="empty-hint">Could not render diagram: '+err.message+'</span>'; console.error(err); });
+}
+
+/* ---------- zoom controls ---------- */
+let currentSvgEl=null, chartBaseW=0, chartBaseH=0, zoomLevel=2;
+function applyZoom(){
+  if(!currentSvgEl) return;
+  currentSvgEl.setAttribute('width', chartBaseW*zoomLevel);
+  currentSvgEl.setAttribute('height', chartBaseH*zoomLevel);
+  document.getElementById('zoomLabel').textContent=Math.round(zoomLevel*100)+'%';
+}
+function zoomIn(){ if(!currentSvgEl) return; zoomLevel=Math.min(5, zoomLevel+0.25); applyZoom(); }
+function zoomOut(){ if(!currentSvgEl) return; zoomLevel=Math.max(0.25, zoomLevel-0.25); applyZoom(); }
+function resetZoom(){ if(!currentSvgEl) return; zoomLevel=2; applyZoom(); }
+
+/* ---------- layout direction toggle (top-down vs left-right) ---------- */
+let chartDirection='TD';
+function toggleDirection(){
+  chartDirection = chartDirection==='TD' ? 'LR' : 'TD';
+  document.getElementById('directionBtn').textContent = 'Layout: '+(chartDirection==='TD' ? 'Top-Down' : 'Left-Right');
+  if(currentSvgEl) generateFlowchart(); // re-render immediately if a chart is already showing
+}
+
+/* ---------- shared raster export helper ---------- */
+function fileBaseName(){
+  return (document.getElementById('dealershipName').value||'dealership').replace(/[^a-z0-9]+/gi,'_').toLowerCase();
+}
+function rasterizeChart(scale, onReady, onError){
+  if(!currentSvgEl){ alert('Generate the flow chart first.'); return; }
+  const fail=function(err){ if(onError) onError(err); else { alert('Could not export: '+(err&&err.message?err.message:'unknown error')); } console.error(err); };
+  try{
+    const w=Math.round(chartBaseW*scale), h=Math.round(chartBaseH*scale);
+    const svgClone=currentSvgEl.cloneNode(true);
+    svgClone.setAttribute('width', w);
+    svgClone.setAttribute('height', h);
+    if(!svgClone.getAttribute('xmlns')) svgClone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    const svgStr=new XMLSerializer().serializeToString(svgClone);
+    // use a base64 data URL rather than a blob: URL — more consistently treated as same-origin
+    // by <canvas>, avoiding "tainted canvas" export failures in some browsers.
+    const svgDataUrl='data:image/svg+xml;charset=utf-8;base64,'+btoa(unescape(encodeURIComponent(svgStr)));
+    const img=new Image();
+    img.onload=function(){
+      try{
+        const canvas=document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        onReady(canvas, w, h);
+      }catch(e){ fail(e); }
+    };
+    img.onerror=fail;
+    img.src=svgDataUrl;
+  }catch(e){ fail(e); }
+}
+
+/* ---------- export as PNG ---------- */
+function exportFlowchartPng(){
+  rasterizeChart(3, function(canvas){ // render at higher resolution than on-screen zoom for a crisp download
+    canvas.toBlob(function(blob){
+      try{
+        if(!blob){ alert('Could not export image (browser blocked reading the diagram back out of the canvas).'); return; }
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=fileBaseName()+'_call_flow.png';
+        a.click();
+      }catch(e){ alert('Could not export: '+e.message); console.error(e); }
+    },'image/png');
+  });
+}
+
+/* ---------- export as PDF ---------- */
+function exportFlowchartPdf(){
+  if(!window.jspdf || !window.jspdf.jsPDF){ alert('PDF export library did not load — check your internet connection and try again.'); return; }
+  rasterizeChart(3, function(canvas, w, h){
+    const imgData=canvas.toDataURL('image/png');
+    // page size in points (72pt/in) sized to the diagram's natural pixel dimensions at ~96dpi,
+    // so the printed page matches the diagram's proportions rather than being stretched to a fixed size
+    const pageW=Math.round(chartBaseW*0.75), pageH=Math.round(chartBaseH*0.75);
+    const { jsPDF } = window.jspdf;
+    const pdf=new jsPDF({ orientation: pageW>=pageH ? 'landscape':'portrait', unit:'pt', format:[pageW,pageH] });
+    pdf.addImage(imgData,'PNG',0,0,pageW,pageH);
+    pdf.save(fileBaseName()+'_call_flow.pdf');
+  }, function(err){ alert('Could not export PDF.'); console.error(err); });
+}
+</script>
+</body>
+</html>
