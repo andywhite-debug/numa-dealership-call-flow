@@ -68,7 +68,7 @@
     background:#fff; border:1px dashed var(--border); border-radius:10px; padding:18px;
     min-height:120px; overflow:auto; text-align:center;
   }
-  #flowchartOutput svg{display:block; margin:0 auto;}
+  #flowchartOutput svg, #flowchartOutput img{display:block; margin:0 auto;}
   .empty-hint{color:#94a3b8; font-size:13px; display:inline-block; margin-top:40px;}
   .top-actions{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;}
 </style>
@@ -122,7 +122,7 @@
   <table id="aaTable">
     <thead><tr>
       <th style="width:10%">Name</th><th style="width:11%">Business-Hours Greeting</th><th style="width:11%">After-Hours Greeting</th>
-      <th style="width:24%">Menu Options</th><th style="width:10%">No-Input Timeout →</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:24%">Menu Options</th><th style="width:10%">No-Input Timeout →</th><th style="width:12%">DID</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -137,7 +137,7 @@
   <table id="ivrTable">
     <thead><tr>
       <th style="width:10%">Name</th><th style="width:15%">Purpose / Description</th>
-      <th style="width:27%">Menu Options</th><th style="width:13%">Fallback → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:27%">Menu Options</th><th style="width:13%">Fallback → (Type:Name)</th><th style="width:12%">DID</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -152,7 +152,7 @@
   <table id="rgTable">
     <thead><tr>
       <th style="width:12%">Name</th><th style="width:16%">Members (extensions)</th><th style="width:12%">Ring Strategy</th>
-      <th style="width:9%">Timeout (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:9%">Timeout (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">DID</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -167,7 +167,7 @@
   <table id="hgTable">
     <thead><tr>
       <th style="width:12%">Name</th><th style="width:16%">Members (ordered)</th><th style="width:12%">Hunt Strategy</th>
-      <th style="width:9%">Timeout/step (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:9%">Timeout/step (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">DID</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -182,7 +182,7 @@
   <table id="qTable">
     <thead><tr>
       <th style="width:12%">Name</th><th style="width:16%">Agents (extensions)</th><th style="width:12%">Strategy</th>
-      <th style="width:9%">Max Wait (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">Direct DID (if any)</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
+      <th style="width:9%">Max Wait (sec)</th><th style="width:14%">Overflow → (Type:Name)</th><th style="width:12%">DID</th><th style="width:12%">Extension (if any)</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -197,7 +197,7 @@
   <table id="extTable">
     <thead><tr>
       <th style="width:12%">Extension</th><th style="width:22%">User Name</th><th style="width:20%">Department</th>
-      <th style="width:20%">Direct DID (if any)</th><th style="width:14%">Voicemail?</th><th class="del-cell"></th>
+      <th style="width:20%">DID</th><th style="width:14%">Voicemail?</th><th class="del-cell"></th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -492,7 +492,7 @@ function defaultLabel(type,name){
 }
 function sanitize(s){ return (s||'').trim().replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'unnamed'; }
 function esc(s){ return (s||'').replace(/"/g,"'"); }
-function withDid(label, directdid){ return directdid ? label+'\\nDirect DID: '+esc(directdid) : label; }
+function withDid(label, directdid){ return directdid ? label+'\\nDID: '+esc(directdid) : label; }
 function withExt(label, extension){ return extension ? label+'\\nExt: '+esc(extension) : label; }
 
 /* appends a footer (dealership / PBX / documented-by) directly into the SVG so it shows up
@@ -653,8 +653,16 @@ function generateFlowchart(){
   const definition=lines.join('\n');
   const container=document.getElementById('flowchartOutput');
   mermaid.render('flowchartSvg_'+Date.now(), definition).then(({svg})=>{
-    container.innerHTML=svg;
-    const svgEl=container.querySelector('svg');
+    // Build the SVG inside a detached element (never inserted into the visible page) rather
+    // than directly in the container. Some browser extensions (click-to-dial / phone-number
+    // linkifiers) scan visible page text for phone-number-like patterns and wrap them in an
+    // <a> tag — inside an SVG <text>/<tspan> that corrupts the text layout and makes DID/ext
+    // numbers silently disappear from the rendered diagram. Keeping the master SVG off-DOM
+    // avoids that entirely; we display a rasterized <img> instead, which has no text nodes for
+    // such an extension to find or rewrite.
+    const holder=document.createElement('div');
+    holder.innerHTML=svg;
+    const svgEl=holder.querySelector('svg');
     if(svgEl){
       svgEl.removeAttribute('style');
       addFooterToSvg(svgEl);
@@ -665,17 +673,35 @@ function generateFlowchart(){
       }
       currentSvgEl=svgEl;
       zoomLevel=2; // default to twice natural size
-      applyZoom();
+      renderChartImage(container);
     }
   }).catch(err=>{ container.innerHTML='<span class="empty-hint">Could not render diagram: '+err.message+'</span>'; console.error(err); });
+}
+
+/* ---------- display the pristine (detached) SVG as a static <img> ---------- */
+function svgToDataUrl(svgEl){
+  const clone=svgEl.cloneNode(true);
+  if(!clone.getAttribute('xmlns')) clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  const svgStr=new XMLSerializer().serializeToString(clone);
+  return 'data:image/svg+xml;charset=utf-8;base64,'+btoa(unescape(encodeURIComponent(svgStr)));
+}
+function renderChartImage(container){
+  if(!currentSvgEl) return;
+  container.innerHTML='';
+  const img=document.createElement('img');
+  img.id='chartImg';
+  img.alt='Call flow diagram';
+  img.src=svgToDataUrl(currentSvgEl);
+  container.appendChild(img);
+  applyZoom();
 }
 
 /* ---------- zoom controls ---------- */
 let currentSvgEl=null, chartBaseW=0, chartBaseH=0, zoomLevel=2;
 function applyZoom(){
   if(!currentSvgEl) return;
-  currentSvgEl.setAttribute('width', chartBaseW*zoomLevel);
-  currentSvgEl.setAttribute('height', chartBaseH*zoomLevel);
+  const img=document.getElementById('chartImg');
+  if(img){ img.style.width=(chartBaseW*zoomLevel)+'px'; img.style.height=(chartBaseH*zoomLevel)+'px'; }
   document.getElementById('zoomLabel').textContent=Math.round(zoomLevel*100)+'%';
 }
 function zoomIn(){ if(!currentSvgEl) return; zoomLevel=Math.min(5, zoomLevel+0.25); applyZoom(); }
