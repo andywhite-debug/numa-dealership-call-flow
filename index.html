@@ -219,6 +219,7 @@
 <div class="card">
   <h2>Call Flow Diagram</h2>
   <div class="legend">
+    <span><span class="dot" style="background:#94a3b8"></span>Customer — stadium</span>
     <span><span class="dot" style="background:var(--blue)"></span>DID / External # — stadium</span>
     <span><span class="dot" style="background:var(--purple)"></span>Auto Attendant — diamond</span>
     <span><span class="dot" style="background:var(--indigo)"></span>IVR — diamond</span>
@@ -506,7 +507,8 @@ function addFooterToSvg(svgEl){
   const dealership=document.getElementById('dealershipName').value.trim();
   const pbx=document.getElementById('pbxSystem').value.trim();
   const prepared=document.getElementById('preparedBy').value.trim();
-  const parts=[dealership, pbx&&('PBX: '+pbx), prepared&&('Documented by: '+prepared)].filter(Boolean);
+  const generatedAt='Generated '+new Date().toLocaleString();
+  const parts=[dealership, pbx&&('PBX: '+pbx), prepared&&('Documented by: '+prepared), generatedAt].filter(Boolean);
   if(parts.length===0) return;
   const footerLine=parts.join('   •   ');
 
@@ -539,7 +541,7 @@ function addFooterToSvg(svgEl){
    diamond = decision point (caller picks a menu option),
    subroutine (double-bordered rect) = a sub-flow that rings multiple destinations,
    plain rectangle = an ordinary process step/endpoint (a person's extension). */
-const TYPE_SHAPE={did:'stadium', vm:'stadium', extn:'stadium', aa:'diamond', ivr:'diamond', rg:'subroutine', hg:'subroutine', q:'subroutine', ext:'rect'};
+const TYPE_SHAPE={did:'stadium', vm:'stadium', extn:'stadium', customer:'stadium', aa:'diamond', ivr:'diamond', rg:'subroutine', hg:'subroutine', q:'subroutine', ext:'rect'};
 function shapeWrap(cls,label){
   switch(TYPE_SHAPE[cls]){
     case 'stadium': return '(["'+label+'"])';
@@ -565,10 +567,18 @@ function generateFlowchart(){
   function addEdge(from,to,label){ edges.push({from,to,label}); }
 
   // definer passes (authoritative labels)
+  let hasAnyDid=false;
   data.dids.forEach(r=>{ if(!r['did-num']) return;
+    hasAnyDid=true;
     const id='DID_'+sanitize(r['did-num']);
-    setNode(id, 'DID: '+esc(r['did-num'])+(r['did-desc']?'\\n'+esc(r['did-desc']):''), 'did');
+    setNode(id, (r['did-desc']?esc(r['did-desc'])+'\\n':'')+'DID: '+esc(r['did-num']), 'did');
   });
+  if(hasAnyDid){
+    setNode('CUSTOMER', 'Customer', 'customer');
+    data.dids.forEach(r=>{ if(!r['did-num']) return;
+      addEdge('CUSTOMER', 'DID_'+sanitize(r['did-num']), null);
+    });
+  }
   data.aas.forEach(r=>{ if(!r['aa-name']) return;
     setNode(idFor('AutoAttendant',r['aa-name']), withExt('Auto Attendant: '+esc(r['aa-name']), r['aa-extension']), 'aa');
   });
@@ -658,6 +668,7 @@ function generateFlowchart(){
   let lines=['flowchart '+chartDirection];
   nodeIds.forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
   edges.forEach(e=>{ lines.push(e.from+' -->'+(e.label?'|'+e.label+'|':'')+' '+e.to); });
+  lines.push('classDef customer fill:#f8fafc,stroke:#64748b,color:#334155');
   lines.push('classDef did fill:#dbeafe,stroke:#2563eb,color:#1e3a8a');
   lines.push('classDef aa fill:#ede9fe,stroke:#7c3aed,color:#4c1d95');
   lines.push('classDef ivr fill:#e0e7ff,stroke:#4f46e5,color:#312e81');
