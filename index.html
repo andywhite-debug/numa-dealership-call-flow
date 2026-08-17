@@ -517,23 +517,23 @@ function addFooterToSvg(svgEl){
   let x=0,y=0,w=parseFloat(svgEl.getAttribute('width'))||800,h=parseFloat(svgEl.getAttribute('height'))||500;
   if(vb && vb.width){ x=vb.x; y=vb.y; w=vb.width; h=vb.height; }
 
-  const footerH=32;
+  const footerH=40; // taller now that the footer text matches the diagram's own font size
   svgEl.setAttribute('viewBox', x+' '+y+' '+w+' '+(h+footerH));
 
   const ns='http://www.w3.org/2000/svg';
   const line=document.createElementNS(ns,'line');
   line.setAttribute('x1', x+12); line.setAttribute('x2', x+w-12);
-  line.setAttribute('y1', y+h+8); line.setAttribute('y2', y+h+8);
+  line.setAttribute('y1', y+h+10); line.setAttribute('y2', y+h+10);
   line.setAttribute('stroke','#d8dee8'); line.setAttribute('stroke-width','1');
   svgEl.appendChild(line);
 
   const text=document.createElementNS(ns,'text');
   text.setAttribute('x', x+w/2);
-  text.setAttribute('y', y+h+footerH-6);
+  text.setAttribute('y', y+h+footerH-8);
   text.setAttribute('text-anchor','middle');
   text.setAttribute('font-family','ui-sans-serif,system-ui,-apple-system,sans-serif');
-  text.setAttribute('font-size','13');
-  text.setAttribute('fill','#64748b');
+  text.setAttribute('font-size','16'); // matches the diagram's own node/edge label size
+  text.setAttribute('fill','#000000'); // black, not grey
   text.textContent=footerLine;
   svgEl.appendChild(text);
 }
