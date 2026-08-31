@@ -552,6 +552,10 @@ function shapeWrap(cls,label){
   }
 }
 function idFor(type,name){ return (TYPE_PREFIX[type]||'X')+'_'+sanitize(name); }
+// A DID box's identity is the number PLUS which destination it rings, not just the number --
+// two different destinations (e.g. two dealership brands sharing one front line) that happen
+// to publish the exact same phone number still need to draw as two separate boxes.
+function didId(r){ return 'DID_'+sanitize((r['did-num']||'')+'_'+(r['did-destname']||r['did-desc']||'')); }
 function parseTypeName(str){
   if(!str) return null;
   const idx=str.indexOf(':'); if(idx<0) return null;
@@ -579,7 +583,7 @@ function generateFlowchart(){
   const entryTargetIds=new Set();
   data.dids.forEach(r=>{ if(!r['did-num']) return;
     hasAnyDid=true;
-    const id='DID_'+sanitize(r['did-num']);
+    const id=didId(r);
     setNode(id, (r['did-desc']?esc(r['did-desc'])+'\\n':'')+'DID: '+esc(r['did-num']), 'did');
     if(r['did-type'] && r['did-destname'] && ENTRY_DID_TYPES[r['did-type']]){
       entryTargetIds.add(idFor(r['did-type'], r['did-destname']));
@@ -587,7 +591,7 @@ function generateFlowchart(){
   });
   if(hasAnyDid){ setNode('CUSTOMER', 'Customer', 'customer'); }
   data.dids.forEach(r=>{ if(!r['did-num']) return;
-    const id='DID_'+sanitize(r['did-num']);
+    const id=didId(r);
     if(ENTRY_DID_TYPES[r['did-type']]){
       addEdge('CUSTOMER', id, null);
     } else {
@@ -616,7 +620,7 @@ function generateFlowchart(){
 
   // edges: every DID box connects on to its own destination, same as originally.
   data.dids.forEach(r=>{ if(!r['did-num']||!r['did-type']||!r['did-destname']) return;
-    const fromId='DID_'+sanitize(r['did-num']);
+    const fromId=didId(r);
     const toId=idFor(r['did-type'],r['did-destname']);
     ensureNode(toId, defaultLabel(r['did-type'],r['did-destname']), TYPE_CLASS[r['did-type']]);
     addEdge(fromId,toId,null);
