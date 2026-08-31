@@ -682,7 +682,10 @@ function generateFlowchart(){
 
   let lines=['flowchart '+chartDirection];
   nodeIds.forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
-  edges.forEach(e=>{ lines.push(e.from+' -->'+(e.label?'|'+e.label+'|':'')+' '+e.to); });
+  // Edge labels are quoted (same as node labels via shapeWrap) so punctuation like the
+  // parentheses in a brand-suffixed destination name -- e.g. "Service Advisors (Ford)" --
+  // doesn't break Mermaid's parser when it's used as a fallback edge label.
+  edges.forEach(e=>{ lines.push(e.from+' -->'+(e.label?'|"'+esc(e.label)+'"|':'')+' '+e.to); });
   lines.push('classDef customer fill:#f8fafc,stroke:#64748b,color:#334155');
   lines.push('classDef did fill:#dbeafe,stroke:#2563eb,color:#1e3a8a');
   lines.push('classDef aa fill:#ede9fe,stroke:#7c3aed,color:#4c1d95');
