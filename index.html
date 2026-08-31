@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -516,23 +517,23 @@ function addFooterToSvg(svgEl){
   let x=0,y=0,w=parseFloat(svgEl.getAttribute('width'))||800,h=parseFloat(svgEl.getAttribute('height'))||500;
   if(vb && vb.width){ x=vb.x; y=vb.y; w=vb.width; h=vb.height; }
 
-  const footerH=32;
+  const footerH=40; // taller now that the footer text matches the diagram's own font size
   svgEl.setAttribute('viewBox', x+' '+y+' '+w+' '+(h+footerH));
 
   const ns='http://www.w3.org/2000/svg';
   const line=document.createElementNS(ns,'line');
   line.setAttribute('x1', x+12); line.setAttribute('x2', x+w-12);
-  line.setAttribute('y1', y+h+8); line.setAttribute('y2', y+h+8);
+  line.setAttribute('y1', y+h+10); line.setAttribute('y2', y+h+10);
   line.setAttribute('stroke','#d8dee8'); line.setAttribute('stroke-width','1');
   svgEl.appendChild(line);
 
   const text=document.createElementNS(ns,'text');
   text.setAttribute('x', x+w/2);
-  text.setAttribute('y', y+h+footerH-6);
+  text.setAttribute('y', y+h+footerH-8);
   text.setAttribute('text-anchor','middle');
   text.setAttribute('font-family','ui-sans-serif,system-ui,-apple-system,sans-serif');
-  text.setAttribute('font-size','13');
-  text.setAttribute('fill','#64748b');
+  text.setAttribute('font-size','16'); // matches the diagram's own node/edge label size
+  text.setAttribute('fill','#000000'); // black, not grey
   text.textContent=footerLine;
   svgEl.appendChild(text);
 }
@@ -567,18 +568,32 @@ function generateFlowchart(){
   function addEdge(from,to,label){ edges.push({from,to,label}); }
 
   // definer passes (authoritative labels)
+  // Every DID gets its own box. Entry-point DIDs (ringing an Auto Attendant or IVR -- i.e. a
+  // dealership's published main line) are fed by a shared "Customer" node, since that's a real
+  // inbound call arriving from outside. A DID that rings a Ring/Hunt Group, Queue, Extension,
+  // Voicemail, or External destination directly instead gets its arrow FROM whichever
+  // entry-point node it's downstream of (the IVR/Auto Attendant), then continues on to its own
+  // destination exactly as before -- see the two edge passes further down.
+  const ENTRY_DID_TYPES={AutoAttendant:1, IVR:1};
   let hasAnyDid=false;
+  const entryTargetIds=new Set();
   data.dids.forEach(r=>{ if(!r['did-num']) return;
     hasAnyDid=true;
     const id='DID_'+sanitize(r['did-num']);
     setNode(id, (r['did-desc']?esc(r['did-desc'])+'\\n':'')+'DID: '+esc(r['did-num']), 'did');
+    if(r['did-type'] && r['did-destname'] && ENTRY_DID_TYPES[r['did-type']]){
+      entryTargetIds.add(idFor(r['did-type'], r['did-destname']));
+    }
   });
-  if(hasAnyDid){
-    setNode('CUSTOMER', 'Customer', 'customer');
-    data.dids.forEach(r=>{ if(!r['did-num']) return;
-      addEdge('CUSTOMER', 'DID_'+sanitize(r['did-num']), null);
-    });
-  }
+  if(hasAnyDid){ setNode('CUSTOMER', 'Customer', 'customer'); }
+  data.dids.forEach(r=>{ if(!r['did-num']) return;
+    const id='DID_'+sanitize(r['did-num']);
+    if(ENTRY_DID_TYPES[r['did-type']]){
+      addEdge('CUSTOMER', id, null);
+    } else {
+      entryTargetIds.forEach(entryId=>addEdge(entryId, id, null));
+    }
+  });
   data.aas.forEach(r=>{ if(!r['aa-name']) return;
     setNode(idFor('AutoAttendant',r['aa-name']), withExt('Auto Attendant: '+esc(r['aa-name']), r['aa-extension']), 'aa');
   });
@@ -599,7 +614,7 @@ function generateFlowchart(){
     setNode(idFor('Extension',r['ext-num']), withDid(label, r['ext-directdid']), 'ext');
   });
 
-  // edges
+  // edges: every DID box connects on to its own destination, same as originally.
   data.dids.forEach(r=>{ if(!r['did-num']||!r['did-type']||!r['did-destname']) return;
     const fromId='DID_'+sanitize(r['did-num']);
     const toId=idFor(r['did-type'],r['did-destname']);
@@ -615,7 +630,7 @@ function generateFlowchart(){
       if(!rest) return;
       const toId=idFor(rest.type,rest.name);
       ensureNode(toId, defaultLabel(rest.type,rest.name), TYPE_CLASS[rest.type]);
-      addEdge(fromId,toId,'Press '+digit);
+      addEdge(fromId,toId,digit);
     });
     const to=parseTypeName(r['aa-timeout']);
     if(to){ const toId=idFor(to.type,to.name); ensureNode(toId, defaultLabel(to.type,to.name), TYPE_CLASS[to.type]); addEdge(fromId,toId,'timeout'); }
@@ -629,7 +644,7 @@ function generateFlowchart(){
       if(!rest) return;
       const toId=idFor(rest.type,rest.name);
       ensureNode(toId, defaultLabel(rest.type,rest.name), TYPE_CLASS[rest.type]);
-      addEdge(fromId,toId,'Press '+digit);
+      addEdge(fromId,toId,digit);
     });
     const fb=parseTypeName(r['ivr-fallback']);
     if(fb){ const toId=idFor(fb.type,fb.name); ensureNode(toId, defaultLabel(fb.type,fb.name), TYPE_CLASS[fb.type]); addEdge(fromId,toId,'fallback'); }
@@ -667,7 +682,10 @@ function generateFlowchart(){
 
   let lines=['flowchart '+chartDirection];
   nodeIds.forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
-  edges.forEach(e=>{ lines.push(e.from+' -->'+(e.label?'|'+e.label+'|':'')+' '+e.to); });
+  // Edge labels are quoted (same as node labels via shapeWrap) so punctuation like the
+  // parentheses in a brand-suffixed destination name -- e.g. "Service Advisors (Ford)" --
+  // doesn't break Mermaid's parser when it's used as a fallback edge label.
+  edges.forEach(e=>{ lines.push(e.from+' -->'+(e.label?'|"'+esc(e.label)+'"|':'')+' '+e.to); });
   lines.push('classDef customer fill:#f8fafc,stroke:#64748b,color:#334155');
   lines.push('classDef did fill:#dbeafe,stroke:#2563eb,color:#1e3a8a');
   lines.push('classDef aa fill:#ede9fe,stroke:#7c3aed,color:#4c1d95');
