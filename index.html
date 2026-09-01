@@ -581,19 +581,49 @@ function generateFlowchart(){
   const ENTRY_DID_TYPES={AutoAttendant:1, IVR:1};
   let hasAnyDid=false;
   const entryTargetIds=new Set();
+  const entryTitles={}; // entry node id -> its destname, used later as its subgraph's title
   data.dids.forEach(r=>{ if(!r['did-num']) return;
     hasAnyDid=true;
     const id=didId(r);
     setNode(id, (r['did-desc']?esc(r['did-desc'])+'\\n':'')+'DID: '+esc(r['did-num']), 'did');
     if(r['did-type'] && r['did-destname'] && ENTRY_DID_TYPES[r['did-type']]){
-      entryTargetIds.add(idFor(r['did-type'], r['did-destname']));
+      const targetId=idFor(r['did-type'], r['did-destname']);
+      entryTargetIds.add(targetId);
+      entryTitles[targetId]=r['did-destname'];
     }
   });
   if(hasAnyDid){ setNode('CUSTOMER', 'Customer', 'customer'); }
+  // For a DID that rings a destination directly (not an entry point itself), which entry
+  // point(s) it should be shown coming from depends on which entry's own menu actually offers
+  // that destination -- e.g. with two brands sharing a PBX, a brand-specific destination's
+  // direct-dial DID should only ever be shown downstream of THAT brand's operator, not both.
+  // Built from the menu text directly (same "digit=Type:Name" entries each menu already lists),
+  // so it reuses whatever brand filtering already went into building that menu upstream, rather
+  // than re-guessing it here.
+  const entryMenuTargets={}; // entry node id -> Set of "Type:Name" strings its own menu offers
+  function collectMenuTargets(entryId, menuText){
+    const set=entryMenuTargets[entryId]||(entryMenuTargets[entryId]=new Set());
+    (menuText||'').split('\n').forEach(line=>{
+      const eq=line.lastIndexOf('='); if(eq<0) return;
+      const rest=line.slice(eq+1).trim();
+      if(parseTypeName(rest)) set.add(rest);
+    });
+  }
+  data.aas.forEach(r=>{ if(r['aa-name']) collectMenuTargets(idFor('AutoAttendant',r['aa-name']), (r['aa-bh']||'')+'\n'+(r['aa-ah']||'')); });
+  data.ivrs.forEach(r=>{ if(r['ivr-name']) collectMenuTargets(idFor('IVR',r['ivr-name']), r['ivr-menu']); });
   data.dids.forEach(r=>{ if(!r['did-num']) return;
     const id=didId(r);
     if(ENTRY_DID_TYPES[r['did-type']]){
       addEdge('CUSTOMER', id, null);
+    } else if(r['did-type'] && r['did-destname']){
+      const key=r['did-type']+':'+r['did-destname'];
+      let claimedByAnEntry=false;
+      entryTargetIds.forEach(entryId=>{
+        if(entryMenuTargets[entryId] && entryMenuTargets[entryId].has(key)){ addEdge(entryId, id, null); claimedByAnEntry=true; }
+      });
+      // Nothing's menu actually offers this destination -- still connect it from every entry
+      // point so it doesn't end up as an orphaned box floating with no incoming line at all.
+      if(!claimedByAnEntry) entryTargetIds.forEach(entryId=>addEdge(entryId, id, null));
     } else {
       entryTargetIds.forEach(entryId=>addEdge(entryId, id, null));
     }
@@ -684,8 +714,49 @@ function generateFlowchart(){
     return;
   }
 
+  // ---------- Cluster each entry point's own subtree into its own Mermaid subgraph ----------
+  // entryTargetIds are the top-level entry points (one per Main Number -> Operator/AA pair,
+  // e.g. one for each dealership brand). BFS forward over the edges we just built from each one:
+  // a node reachable from exactly ONE entry point belongs exclusively to that entry's subgraph,
+  // so it's drawn clustered together with it (a Ford-only destination lands visually under
+  // Ford's operator, not floating over near a different brand's). A node reached from two or
+  // more entry points (a genuinely shared destination, like a catch-all every brand routes to)
+  // has no single owner and is left outside every subgraph, wherever the layout puts it -- there
+  // is no "correct" side for something that's legitimately shared between brands.
+  const adjacency={};
+  edges.forEach(e=>{ (adjacency[e.from]=adjacency[e.from]||[]).push(e.to); });
+  const owner={}; // nodeId -> the one entry id that owns it exclusively, or null if shared
+  entryTargetIds.forEach(rootId=>{
+    const seen=new Set([rootId]);
+    const queue=[rootId];
+    while(queue.length){
+      const cur=queue.shift();
+      if(!(cur in owner)) owner[cur]=rootId;
+      else if(owner[cur]!==rootId) owner[cur]=null;
+      (adjacency[cur]||[]).forEach(next=>{ if(!seen.has(next)){ seen.add(next); queue.push(next); } });
+    }
+  });
+  // An entry DID belongs in the same subgraph as the IVR/Auto Attendant it rings.
+  data.dids.forEach(r=>{ if(!r['did-num']||!ENTRY_DID_TYPES[r['did-type']]||!r['did-destname']) return;
+    const targetId=idFor(r['did-type'],r['did-destname']);
+    if(targetId in owner) owner[didId(r)]=owner[targetId];
+  });
+  const groupedIds=new Set();
   let lines=['flowchart '+chartDirection];
-  nodeIds.forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
+  // Only worth clustering into subgraphs when there's more than one entry point -- with just
+  // one, every node would land in a single subgraph wrapping the whole diagram, which adds a
+  // box around everything with nothing to actually disambiguate.
+  if(entryTargetIds.size>1){
+    entryTargetIds.forEach(rootId=>{
+      const members=nodeIds.filter(id=>owner[id]===rootId);
+      if(members.length<2) return; // nothing to usefully cluster on its own
+      members.forEach(id=>groupedIds.add(id));
+      lines.push('subgraph SG_'+sanitize(entryTitles[rootId]||rootId)+'["'+esc(entryTitles[rootId]||rootId)+'"]');
+      members.forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
+      lines.push('end');
+    });
+  }
+  nodeIds.filter(id=>!groupedIds.has(id)).forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
   // Edge labels are quoted (same as node labels via shapeWrap) so punctuation like the
   // parentheses in a brand-suffixed destination name -- e.g. "Service Advisors (Ford)" --
   // doesn't break Mermaid's parser when it's used as a fallback edge label.
