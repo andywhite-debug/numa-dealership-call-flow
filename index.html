@@ -711,19 +711,23 @@ function generateFlowchart(){
     return;
   }
 
-  // ---------- Nudge genuinely shared destinations toward the visual center ----------
-  // Mermaid's dagre layout uses each node's declaration order as its starting position within
-  // a rank before running its crossing-reduction pass, so simply declaring nodes in the same
-  // order they were built (brand A's stuff, then brand B's stuff, with shared destinations like
-  // a general catch-all tacked on wherever they happened to be built) tends to leave shared
-  // nodes stranded off to one side rather than centered between the brands that both feed them.
-  // When there's more than one entry point (i.e. more than one brand/OEM operator), figure out
-  // which nodes are reachable from ONLY one entry ("brand-exclusive") vs from two or more
-  // ("shared"), then re-declare the node list as [first half of brands' exclusive nodes, all
-  // shared nodes, second half of brands' exclusive nodes] -- physically placing shared nodes in
-  // the middle of the declaration order so dagre's layout tends to leave them near the visual
-  // center. This is purely a declaration-order hint; it draws no boxes and changes no edges.
-  let orderedNodeIds = nodeIds;
+  // ---------- Keep each OEM's own nodes in their own lane; center genuinely shared ones ----------
+  // Plain declaration-order hints aren't strong enough once a diagram has enough edges: Mermaid's
+  // dagre layout runs its own crossing-reduction pass after using declaration order as a seed, and
+  // with real dealership data (several direct-dial DIDs, several ring groups per brand, a shared
+  // catch-all) that pass happily reshuffles brand-exclusive nodes into a tangled single column.
+  // The reliable way to keep one brand's nodes visually grouped together is Mermaid's own
+  // clustering primitive -- a subgraph -- which dagre treats as a unit and does not tangle with
+  // another cluster's nodes. So each brand/OEM's EXCLUSIVE nodes go in their own subgraph, styled
+  // with no border and no fill so nothing renders as a visible box (this is layout grouping only,
+  // not the old yellow-rectangle feature). Any node reachable from two or more entries -- a real
+  // shared destination like "General (Catch-All)", plus the shared "Customer" node -- is declared
+  // OUTSIDE every subgraph, physically between the first and second half of the brand subgraphs,
+  // so dagre's layout naturally leaves it centered between the OEM lanes instead of off to one side.
+  const subgraphIds=[];
+  const subgraphStyleLines=[];
+  function pushNodeLine(id){ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); }
+  let lines=['flowchart '+chartDirection];
   if (entryTargetIds.size > 1) {
     const adjacency = {};
     edges.forEach(e => { (adjacency[e.from] = adjacency[e.from] || []).push(e.to); });
@@ -738,7 +742,7 @@ function generateFlowchart(){
         (adjacency[cur] || []).forEach(next => { if (!seen.has(next)) { seen.add(next); queue.push(next); } });
       }
     });
-    // An entry DID belongs with the IVR/Auto Attendant it rings, for this ordering too.
+    // An entry DID belongs with the IVR/Auto Attendant it rings, for this grouping too.
     data.dids.forEach(r => { if (!r['did-num'] || !ENTRY_DID_TYPES[r['did-type']] || !r['did-destname']) return;
       const targetId = idFor(r['did-type'], r['did-destname']);
       if (targetId in owner) owner[didId(r)] = owner[targetId];
@@ -753,13 +757,23 @@ function generateFlowchart(){
       else shared.push(id); // unreachable-from-any-entry nodes land here too, which is fine
     });
     const mid = Math.ceil(entryOrder.length / 2);
-    const before = entryOrder.slice(0, mid).reduce((acc, id) => acc.concat(buckets.get(id)), []);
-    const after = entryOrder.slice(mid).reduce((acc, id) => acc.concat(buckets.get(id)), []);
-    orderedNodeIds = before.concat(shared, after);
+    const before = entryOrder.slice(0, mid);
+    const after = entryOrder.slice(mid);
+    function emitSubgraph(rootId){
+      const owned = buckets.get(rootId);
+      if (!owned || owned.length === 0) return;
+      const sgId = 'SG_'+rootId;
+      subgraphIds.push(sgId);
+      lines.push('subgraph '+sgId+' [" "]');
+      owned.forEach(pushNodeLine);
+      lines.push('end');
+    }
+    before.forEach(emitSubgraph);
+    shared.forEach(pushNodeLine);
+    after.forEach(emitSubgraph);
+  } else {
+    nodeIds.forEach(pushNodeLine);
   }
-
-  let lines=['flowchart '+chartDirection];
-  orderedNodeIds.forEach(id=>{ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); });
   // Edge labels are quoted (same as node labels via shapeWrap) so punctuation like the
   // parentheses in a brand-suffixed destination name -- e.g. "Service Advisors (Ford)" --
   // doesn't break Mermaid's parser when it's used as a fallback edge label.
@@ -775,6 +789,9 @@ function generateFlowchart(){
   lines.push('classDef vm fill:#fee2e2,stroke:#dc2626,color:#7f1d1d');
   lines.push('classDef extn fill:#fce7f3,stroke:#db2777,color:#831843');
   Object.keys(nodeClass).forEach(id=>{ lines.push('class '+id+' '+nodeClass[id]); });
+  // No border, no fill, no padding on the per-OEM lane subgraphs -- they exist purely so dagre
+  // keeps each brand's nodes grouped together; nothing should render for them on screen.
+  subgraphIds.forEach(sgId=>{ lines.push('style '+sgId+' fill:none,stroke:none'); });
 
   const definition=lines.join('\n');
   const container=document.getElementById('flowchartOutput');
