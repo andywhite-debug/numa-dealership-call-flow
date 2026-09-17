@@ -246,7 +246,11 @@
 <script>
 // htmlLabels:false forces plain SVG text (no <foreignObject>/HTML) so the diagram can be safely
 // drawn into a <canvas> and exported — canvases are "tainted" (export blocked) by SVGs containing HTML.
-mermaid.initialize({ startOnLoad: false, flowchart: { curve: 'basis', htmlLabels: false } });
+// nodeSpacing/rankSpacing are bumped up from Mermaid's defaults (50/50) -- with a busy multi-OEM
+// diagram, several edges converge on the same run of extension boxes, and at the default spacing
+// those boxes sit close enough together that the converging lines visually overlap them. The extra
+// room gives each incoming line space to curve in on its own without crossing through a neighboring box.
+mermaid.initialize({ startOnLoad: false, flowchart: { curve: 'basis', htmlLabels: false, nodeSpacing: 70, rankSpacing: 110 } });
 
 /* ---------- row builders ---------- */
 function delCell(){ const td=document.createElement('td'); td.className='del-cell';
