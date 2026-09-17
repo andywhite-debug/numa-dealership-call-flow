@@ -725,8 +725,18 @@ function generateFlowchart(){
   // OUTSIDE every subgraph, physically between the first and second half of the brand subgraphs,
   // so dagre's layout naturally leaves it centered between the OEM lanes instead of off to one side.
   const subgraphIds=[];
-  const subgraphStyleLines=[];
   function pushNodeLine(id){ lines.push(id+shapeWrap(nodeClass[id], nodeDefs[id])); }
+  // Group Lines destinations whose Dealership column didn't name a specific OEM at all (blank /
+  // "Both" / "Shared") -- these should always be centered, even if, in this particular sheet's
+  // current setup, only one brand's menu happens to route to them today (reachability alone
+  // can't tell "shared by design" apart from "brand-exclusive by coincidence"). The exported
+  // field only carries plain names, so match it back to node ids the same way idFor() does:
+  // strip the RG_/HG_/EXTN_ type prefix and compare the sanitized remainder.
+  const sharedDestNames=new Set((data.sharedDestinations||[]).map(n=>sanitize(n)));
+  function isDeclaredSharedDestination(id){
+    const m=/^(?:RG|HG|EXTN)_(.+)$/.exec(id);
+    return !!m && sharedDestNames.has(m[1]);
+  }
   let lines=['flowchart '+chartDirection];
   if (entryTargetIds.size > 1) {
     const adjacency = {};
@@ -752,7 +762,7 @@ function generateFlowchart(){
     const buckets = new Map(entryOrder.map(id => [id, []]));
     const shared = [];
     nodeIds.forEach(id => {
-      const o = owner[id];
+      const o = isDeclaredSharedDestination(id) ? null : owner[id];
       if (o && buckets.has(o)) buckets.get(o).push(id);
       else shared.push(id); // unreachable-from-any-entry nodes land here too, which is fine
     });
